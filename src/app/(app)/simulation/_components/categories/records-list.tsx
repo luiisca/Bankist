@@ -16,7 +16,7 @@ import Switch from '~/components/ui/core/switch';
 import TitleWithInfo from '../title-with-info';
 import { getCountryOptionLabel, getCurrencyLocaleName, getCurrencyOptions } from '~/lib/sim-settings';
 import { CatInputType } from 'prisma/zod-utils';
-import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_OUTCOME_VAL, getSelectOptionWithFallback } from '~/lib/constants';
+import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_OUTCOME_VAL, SELECT_PER_REC_VAL, getSelectOptionWithFallback } from '~/lib/constants';
 import { RouterOutputs } from '~/lib/trpc/shared';
 import useUpdateInflation from '~/app/(app)/_lib/use-update-inflation';
 import { ControlledSelect } from '~/components/ui/core/form/select/Select';
@@ -69,7 +69,7 @@ const Record = ({
             <div>
                 <ControlledSelect<CatInputType>
                     control={control}
-                    options={() => BASIC_BAL_TYPES}
+                    getOptions={() => BASIC_BAL_TYPES}
                     onChange={(option) => {
                         setInflDisabled(option.value === "income");
 
@@ -141,7 +141,7 @@ const Record = ({
                 <div>
                     <ControlledSelect<CatInputType>
                         control={control}
-                        options={() => getCurrencyOptions({ countryCode: user.country })}
+                        getOptions={() => getCurrencyOptions({ countryCode: user.country })}
                         name={`records.${index}.currency`}
                         label="Currency"
                     />
@@ -193,9 +193,12 @@ export default function RecordsList({
             label: getCountryOptionLabel(user.country),
         },
         inflation: inflValWatcher || user.inflation,
-        currency: {
+        currency: currencyWatcher.value === SELECT_PER_REC_VAL ? {
+            value: user.currency,
+            label: getCurrencyLocaleName(user.currency, user.country)
+        } : {
             value: currencyWatcher.value,
-            label: getCurrencyLocaleName(currencyWatcher.value || user.currency, user.country),
+            label: getCurrencyLocaleName(currencyWatcher.value, user.country),
         },
     };
 
