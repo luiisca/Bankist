@@ -28,10 +28,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             {...props}
             ref={ref}
             className={cn(
-                "mb-2 block h-9 w-full rounded-md border border-gray-300 py-2 px-3 text-sm transition-all placeholder:text-gray-400 [&:not(:focus)]:hover:border-gray-400",
-                "focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:ring-offset-2",
-                "dark:border-dark-400 dark:bg-dark-100 dark:text-dark-neutral dark:placeholder:text-dark-600 [&:not(:focus)]:dark:hover:border-dark-500",
-                "dark:focus:border-dark-accent-200 dark:focus:ring-0 dark:focus:ring-transparent dark:focus:ring-offset-0",
+                "mb-2 block h-9 w-full rounded-md border border-gray-300 py-2 px-3 text-sm transition-colors placeholder:text-gray-400 [&:not(:focus)]:hover:border-gray-400",
+                "focus:border-gray-400 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-neutral-800 focus:ring-offset-2",
+                "dark:border-0 dark:ring-1 dark:ring-dark-400 dark:bg-dark-100 dark:text-dark-neutral dark:placeholder:text-dark-600 [&:not(:focus)]:dark:hover:ring-dark-500 dark:ring-offset-0 dark:focus:ring-dark-accent-200",
+                "file:border-0 file:bg-transparent file:text-sm file:font-medium",
                 props.className
             )}
         />
@@ -170,7 +170,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
                                     "rounded-l-none border-l !border-l-gray-300 dark:!border-l-dark-400",
                                     addOnSuffix &&
                                     "rounded-r-none border-r !border-r-gray-300 dark:!border-r-dark-400",
-                                    "!my-0 border-0 !ring-0 focus:ring-offset-0"
+                                    "!my-0 border-0 !ring-0 focus-visible:ring-offset-0"
                                 )}
                                 {...passThrough}
                                 ref={ref}
@@ -276,7 +276,7 @@ export const NumberInput = <T extends FieldValues = FieldValues>(
 
 type FormProps<T extends object> = {
     form: UseFormReturn<T>;
-    customInputValidation: () => boolean;
+    customInputValidation?: () => boolean;
     handleSubmit: SubmitHandler<T>;
 } & Omit<JSX.IntrinsicElements["form"], "onSubmit">;
 
@@ -293,7 +293,8 @@ const PlainForm = <T extends FieldValues>(
                 onSubmit={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    if (customInputValidation()) {
+
+                    if (!customInputValidation || (customInputValidation && customInputValidation())) {
                         form
                             .handleSubmit(handleSubmit)(event)
                             .catch((err) => {
@@ -324,7 +325,7 @@ const PlainForm = <T extends FieldValues>(
                     })
                 }
             </form>
-        </FormProvider>
+        </FormProvider >
     );
 };
 
