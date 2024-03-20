@@ -3,10 +3,10 @@
 import { ChevronDown, Heart, LogOut, MoreVertical } from "lucide-react";
 import { Session } from "next-auth";
 import { useState } from "react";
-import { signOut } from "~/app/(auth)/auth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "~/components/ui/core/dropdown-menu";
 import FeedbackMenuItem from "~/components/ui/support/feedback-menu-item";
 import { cn } from "~/lib/cn";
+import { signOut } from "../_lib/server-actions";
 
 export default function UserDropdown({ small, sessionUser }: { small?: boolean; sessionUser?: Session['user'] }) {
     const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function UserDropdown({ small, sessionUser }: { small?: boolean; 
 
                         <DropdownMenuItem>
                             <button
-                                // onClick={async () => await signOut({ redirectTo: "/logout" })}
+                                onClick={() => signOut()}
                                 className="group flex cursor-pointer items-center px-4 py-2"
                             >
                                 <LogOut
