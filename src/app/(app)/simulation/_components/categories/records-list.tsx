@@ -19,7 +19,7 @@ import { CatInputType } from 'prisma/zod-utils';
 import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_OUTCOME_VAL, SELECT_PER_REC_VAL, getSelectOptionWithFallback } from '~/lib/constants';
 import { RouterOutputs } from '~/lib/trpc/shared';
 import useUpdateInflation from '~/app/(app)/_lib/use-update-inflation';
-import { ControlledSelect } from '~/components/ui/core/form/select/Select';
+import { ControlledSelect, ControlledSwitch } from '~/components/ui/core/form/select/Select';
 import { CountryInflInput, CountrySelect } from '../fields';
 
 const Record = ({
@@ -31,16 +31,15 @@ const Record = ({
     fieldArray: UseFieldArrayReturn<FieldValues, "records", "id">;
     user: NonNullable<RouterOutputs['user']['get']>;
 }) => {
-    const [inflDisabled, setInflDisabled] = useState(false);
     const categoryForm = useFormContext<CatInputType>();
     const { register, setValue, control } = categoryForm;
     const { remove } = fieldArray;
 
     const { updateInflation, isLoadingInfl, isValidInfl } = useUpdateInflation<CatInputType>();
 
-    const [recordsIdsToRemove, typeWatcher, freqTypeWatcher, inflTypeWatcher, currencyWatcher, recordTypeWatcher, recordIdWatcher] = useWatch({
+    const [recordsIdsToRemove, typeWatcher, freqTypeWatcher, inflEnabledWather, inflTypeWatcher, currencyWatcher, recordIdWatcher, recordTypeWatcher, recordInflEnabledWatcher] = useWatch({
         control,
-        name: ["recordsIdsToRemove", "type", "freqType", "inflType", "currency", `records.${index}.type`, `records.${index}.id`],
+        name: ["recordsIdsToRemove", "type", "freqType", "inflEnabled", "inflType", "currency", `records.${index}.id`, `records.${index}.type`, `records.${index}.inflEnabled`],
     });
 
     return (
@@ -71,7 +70,7 @@ const Record = ({
                     control={control}
                     getOptions={() => BASIC_BAL_TYPES}
                     onChange={(option) => {
-                        setInflDisabled(option.value === "income");
+                        setValue(`records.${index}.inflEnabled`, option.value === 'outcome')
 
                         return option;
                     }}
@@ -79,25 +78,15 @@ const Record = ({
                     label="Type"
                 />
             </div>
-            {((typeWatcher?.value === "income" && recordTypeWatcher?.value === "outcome") ||
-                (typeWatcher?.value === "outcome" && inflTypeWatcher?.value === "perRec" && recordTypeWatcher?.value === "outcome")) && (
+            {(inflEnabledWather && ((typeWatcher?.value === "income" && recordTypeWatcher?.value === "outcome") ||
+                (typeWatcher?.value === "outcome" && inflTypeWatcher?.value === "perRec" && recordTypeWatcher?.value === "outcome"))) && (
                     <>
-                        {/* <Inflation switch /> */}
+                        {/* inflEnabled switch */}
                         <div className="mb-4 flex items-center space-x-2">
-                            <Label>Inflation</Label>
-                            <Tooltip
-                                content={`${inflDisabled ? "Enable" : "Disable"} inflation`}
-                            >
-                                <div className="self-center rounded-md p-2 hover:bg-gray-200">
-                                    <Switch
-                                        id="disabled"
-                                        checked={!inflDisabled}
-                                        onCheckedChange={() => setInflDisabled(!inflDisabled)}
-                                    />
-                                </div>
-                            </Tooltip>
+                            <Label htmlFor='disable'>Inflation</Label>
+                            <ControlledSwitch control={control} name={`records.${index}.inflEnabled`} />
                         </div>
-                        {!inflDisabled && (
+                        {!recordInflEnabledWatcher && (
                             <div className="flex space-x-3">
                                 {/* country Select */}
                                 <div className="flex-[1_1_80%]">

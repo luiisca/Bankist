@@ -79,7 +79,11 @@ export default function UserSettingsForm({ user, nextStep }: { user: NonNullable
         <Form
             form={userSettingsForm}
             handleSubmit={(values) => {
-                mutation.mutate(values);
+                const parsedUserSettings = {
+                    ...values,
+                    name: values.name || 'Nameless'
+                }
+                mutation.mutate(parsedUserSettings);
             }}
         >
             {/* avatar */}

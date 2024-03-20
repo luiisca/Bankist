@@ -302,7 +302,7 @@ const SalaryForm = ({
                 <div>
                     <ControlledSelect<SalInputType>
                         control={control}
-                        options={() => BASIC_GROUP_TYPES}
+                        getOptions={() => BASIC_GROUP_TYPES}
                         name="taxType"
                         label="Tax Type"
                         onChange={(option) => {
@@ -366,7 +366,7 @@ const SalaryForm = ({
                 <div>
                     <ControlledSelect<SalInputType>
                         control={control}
-                        options={() => getCurrencyOptions({ countryCode: user.country })}
+                        getOptions={() => getCurrencyOptions({ countryCode: user.country })}
                         name="currency"
                         label="Currency"
                     />

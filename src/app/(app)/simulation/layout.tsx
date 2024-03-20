@@ -4,7 +4,6 @@ import { cn } from "~/lib/cn"
 import ThemeButton from "./_components/theme-button"
 import { Settings } from "lucide-react"
 import UserDropdown from "./_components/user-dropdown"
-import { redirect } from "next/navigation"
 import { Button } from "~/components/ui"
 import Nav from "./_components/nav"
 import { auth } from "~/app/(auth)/auth"
@@ -16,9 +15,6 @@ export default async function SimulationLayout({
     children: React.ReactNode
 }) {
     const session = await auth();
-    if (session && !session?.user.completedOnboarding) {
-        redirect('/getting-started')
-    }
 
     return (
         <div className="flex h-screen overflow-hidden">

@@ -13,11 +13,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "~/lib/trpc/react";
 import { DEFAULT_COUNTRY, DEFAULT_CURRENCY, DEFAULT_INDEX_RETURN, DEFAULT_INFLATION, DEFAULT_INVEST_PERC } from "~/lib/constants";
 import { getCountryOptionLabel, getCurrencyLocaleName, getCurrencyOptions } from "~/lib/sim-settings";
-import { CountryInflInput, CountrySelect } from "../../simulation/_components/fields";
+import { CountryInflInput, CountrySelect } from "~/app/_components/fields";
 import useUpdateInflation from "~/app/(app)/_lib/use-update-inflation";
 import { ControlledSelect } from "~/components/ui/core/form/select/Select";
 import { ArrowRightIcon, Percent } from "lucide-react";
-import getDefSettingsSimInputValues from "../../settings/simulation/_lib/get-def-settings-sim-input-values";
+import getDefSettingsSimInputValues from "~/app/_lib/get-def-settings-sim-input-values";
 import { useRouter } from 'next/navigation'
 
 export default function SimPresetsForm({ user }: { user: NonNullable<RouterOutputs['user']['get']> }) {
@@ -40,7 +40,7 @@ export default function SimPresetsForm({ user }: { user: NonNullable<RouterOutpu
         },
         onError: () => {
             toast.error("Error updating settings");
-            router.push('/getting-started/sim-presets')
+            router.push('sim-presets')
         },
     });
     const { updateInflation, isLoadingInfl, isValidInfl } = useUpdateInflation<SettingsSimInputType>();
@@ -106,7 +106,7 @@ export default function SimPresetsForm({ user }: { user: NonNullable<RouterOutpu
                 <div className="flex-[1_1_80%]">
                     <ControlledSelect<SettingsSimInputType>
                         control={control}
-                        options={() => getCurrencyOptions({ countryCode: user.country })}
+                        getOptions={() => getCurrencyOptions({ countryCode: user.country })}
                         name="currency"
                         label="Currency"
                     />

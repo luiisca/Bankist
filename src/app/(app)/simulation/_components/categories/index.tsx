@@ -38,13 +38,13 @@ import {
     BASIC_GROUP_TYPES,
 } from "~/lib/constants";
 import RecordsList from "./records-list";
-import { ControlledSelect } from "~/components/ui/core/form/select/Select";
+import { ControlledSelect, ControlledSwitch } from "~/components/ui/core/form/select/Select";
 import { Dialog, DialogTrigger } from "~/components/ui/core/dialog";
 import { DialogContentConfirmation } from "~/components/ui/custom-dialog";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { api } from "~/lib/trpc/react";
 import TitleWithInfo from "../title-with-info";
-import { CountryInflInput, CountrySelect } from "../fields";
+import { CountryInflInput, CountrySelect } from "~/app/_components/fields";
 import { BalanceContext } from "../../_lib/context";
 import useUpdateInflation from "~/app/(app)/_lib/use-update-inflation";
 import getDefCatInputValues from "../../_lib/get-def-cat-input-values";
@@ -97,9 +97,9 @@ const CategoryForm = ({
     const allValuesWatcher = useWatch({
         control
     })
-    const [typeWatcher, freqTypeWatcher, inflTypeWatcher] = useWatch({
+    const [typeWatcher, freqTypeWatcher, inflEnabledWatcher, inflTypeWatcher] = useWatch({
         control,
-        name: ["type", 'freqType', 'inflType'],
+        name: ["type", 'freqType', 'inflEnabled', 'inflType'],
     });
 
     // mutation
@@ -312,7 +312,7 @@ const CategoryForm = ({
             <div>
                 <ControlledSelect<CatInputType>
                     control={control}
-                    options={() => BASIC_BAL_TYPES}
+                    getOptions={() => BASIC_BAL_TYPES}
                     name="type"
                     label="Type"
                 />
@@ -333,7 +333,7 @@ const CategoryForm = ({
                 <div>
                     <ControlledSelect<CatInputType>
                         control={control}
-                        options={() => getCurrencyOptions({ isTypePerRec: true, countryCode: user.country })}
+                        getOptions={() => getCurrencyOptions({ isTypePerRec: true, countryCode: user.country })}
                         name="currency"
                         label="Currency"
                     />
@@ -357,12 +357,17 @@ const CategoryForm = ({
                             }
                         />
 
+                        {/* inflEnabled switch */}
+                        <ControlledSwitch control={control} name="inflEnabled" />
+
                         {/* inflType select */}
-                        <ControlledSelect
-                            control={control as unknown as Control}
-                            name="inflType"
-                            options={() => CATEGORY_INFL_TYPES}
-                        />
+                        {inflEnabledWatcher && (
+                            <ControlledSelect
+                                control={control as unknown as Control}
+                                name="inflType"
+                                getOptions={() => CATEGORY_INFL_TYPES}
+                            />
+                        )}
                     </div>
 
                     {typeWatcher?.value === "outcome" &&
@@ -397,7 +402,7 @@ const CategoryForm = ({
             <div>
                 <ControlledSelect<CatInputType>
                     control={control}
-                    options={() => BASIC_GROUP_TYPES}
+                    getOptions={() => BASIC_GROUP_TYPES}
                     name="freqType"
                     label="Frequency Type"
                 />

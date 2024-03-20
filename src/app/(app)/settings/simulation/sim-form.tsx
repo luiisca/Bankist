@@ -11,10 +11,10 @@ import { toast } from "sonner";
 import { SettingsSimInputType, settingsSimInputZod } from "prisma/zod-utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "~/lib/trpc/react";
-import getDefSettingsSimInputValues from "./_lib/get-def-settings-sim-input-values"
+import getDefSettingsSimInputValues from "~/app/_lib/get-def-settings-sim-input-values"
 import { DEFAULT_COUNTRY, DEFAULT_CURRENCY, DEFAULT_INDEX_RETURN, DEFAULT_INFLATION, DEFAULT_INVEST_PERC } from "~/lib/constants";
-import { getCountryOptionLabel, getCurrencyLocaleName, getCurrencyOptions } from "~/lib/sim-settings";
-import { CountryInflInput, CountrySelect } from "../../simulation/_components/fields";
+import { getCurrencyOptions } from "~/lib/sim-settings";
+import { CountryInflInput, CountrySelect } from "~/app/_components/fields";
 import useUpdateInflation from "~/app/(app)/_lib/use-update-inflation";
 import { ControlledSelect } from "~/components/ui/core/form/select/Select";
 import { Percent } from "lucide-react";
@@ -57,21 +57,10 @@ export default function SimForm({ user }: { user: NonNullable<RouterOutputs['use
                 for (let index = 0; index < valuesEntries.length; index++) {
                     const entry = valuesEntries[index];
                     if (entry) {
-                        const key = entry[0] as keyof typeof parsedValues;
+                        const key = entry[0] as keyof typeof values;
                         const value = entry[1];
                         if (value === undefined || value === null || value === '') {
-                            if (key === 'country') {
-                                setValue('country', {
-                                    value: DEFAULT_COUNTRY,
-                                    label: getCountryOptionLabel(DEFAULT_COUNTRY)
-                                })
-                                continue;
-                            }
-                            if (key === 'currency') {
-                                setValue('currency', {
-                                    value: DEFAULT_CURRENCY,
-                                    label: getCurrencyLocaleName(DEFAULT_CURRENCY, parsedValues.country)
-                                })
+                            if (key === 'country' || key === 'currency') {
                                 continue;
                             }
                             setValue(key, parsedValues[key])
@@ -80,6 +69,8 @@ export default function SimForm({ user }: { user: NonNullable<RouterOutputs['use
                 }
 
                 mutation.mutate(parsedValues)
+
+                return;
             }}
             className="space-y-6"
         >
@@ -100,7 +91,7 @@ export default function SimForm({ user }: { user: NonNullable<RouterOutputs['use
                 <div className="flex-[1_1_80%]">
                     <ControlledSelect<SettingsSimInputType>
                         control={control}
-                        options={() => getCurrencyOptions({ countryCode: user.country })}
+                        getOptions={() => getCurrencyOptions({ countryCode: user.country })}
                         name="currency"
                         label="Currency"
                     />

@@ -93,7 +93,11 @@ export default function ProfileForm({ user }: { user: NonNullable<RouterOutputs[
         <Form
             form={profileForm}
             handleSubmit={(values) => {
-                mutation.mutate(values);
+                const parsedUserSettings = {
+                    ...values,
+                    name: values.name || 'Nameless'
+                }
+                mutation.mutate(parsedUserSettings);
             }}
         >
             <div className="flex items-center">
@@ -122,8 +126,9 @@ export default function ProfileForm({ user }: { user: NonNullable<RouterOutputs[
                     }}
                 />
             </div>
+            {/* name */}
             <div className="mt-8">
-                <TextField label="Full name" {...profileForm.register("name")} />
+                <TextField label="Name" placeholder="John Doe" {...profileForm.register("name")} />
             </div>
 
             <Button
