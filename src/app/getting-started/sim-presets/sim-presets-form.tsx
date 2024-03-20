@@ -21,7 +21,7 @@ import getDefSettingsSimInputValues from "~/app/_lib/get-def-settings-sim-input-
 import { useRouter } from 'next/navigation'
 
 export default function SimPresetsForm({ user }: { user: NonNullable<RouterOutputs['user']['get']> }) {
-    const router = useRouter()
+    const router = useRouter();
     const utils = api.useUtils();
     const { data: _user } = api.user.get.useQuery()
     const simSettingsForm = useForm<SettingsSimInputType>({
@@ -31,16 +31,14 @@ export default function SimPresetsForm({ user }: { user: NonNullable<RouterOutpu
     const { setValue, control } = simSettingsForm;
 
     const mutation = api.user.set.useMutation({
-        onMutate: () => {
-            router.push('/simulation')
-        },
         onSuccess: async () => {
+            router.push('/simulation')
             toast.success("Settings updated");
             await utils.user.get.invalidate();
         },
         onError: () => {
             toast.error("Error updating settings");
-            router.push('sim-presets')
+            router.push(`/getting-started/sim-presets`)
         },
     });
     const { updateInflation, isLoadingInfl, isValidInfl } = useUpdateInflation<SettingsSimInputType>();
@@ -85,7 +83,7 @@ export default function SimPresetsForm({ user }: { user: NonNullable<RouterOutpu
                     }
                 }
 
-                mutation.mutate(parsedValues)
+                mutation.mutate({ ...parsedValues, completedOnboarding: true })
             }}
             className="space-y-6"
         >

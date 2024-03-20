@@ -10,7 +10,7 @@ import {
 import { RouterOutputs } from "~/lib/trpc/shared";
 import { toast } from "sonner";
 import { signOut } from "next-auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "../../_components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/app/_components/avatar";
 import { DialogContentConfirmation } from "~/components/ui/custom-dialog";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Dialog, DialogTrigger } from "~/components/ui/core/dialog";

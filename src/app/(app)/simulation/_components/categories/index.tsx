@@ -486,6 +486,9 @@ const Categories = () => {
     const catsState = useState<(React.ReactElement | null)[]>([])
     const [cats, setCats] = catsState
     useEffect(() => {
+        console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥")
+        console.log('categories useEffect')
+        console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥")
         const catsData = utils.simulation.categories.get.getData()
         if (catsData && user) {
             const instantiatedCats = catsData.map((catData) => {

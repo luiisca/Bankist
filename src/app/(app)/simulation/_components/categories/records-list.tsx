@@ -20,7 +20,7 @@ import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_OUTCOME_VAL, SE
 import { RouterOutputs } from '~/lib/trpc/shared';
 import useUpdateInflation from '~/app/(app)/_lib/use-update-inflation';
 import { ControlledSelect, ControlledSwitch } from '~/components/ui/core/form/select/Select';
-import { CountryInflInput, CountrySelect } from '../fields';
+import { CountryInflInput, CountrySelect } from '~/app/_components/fields';
 
 const Record = ({
     index,

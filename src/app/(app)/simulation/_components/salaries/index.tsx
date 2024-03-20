@@ -438,6 +438,9 @@ export default function Salaries() {
     const salariesState = useState<(React.ReactElement | null)[]>([])
     const [salaries, setSalaries] = salariesState
     useEffect(() => {
+        console.log("💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰")
+        console.log('salaries useEffect')
+        console.log("💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰")
         const salariesData = utils.simulation.salaries.get.getData()
         if (salariesData && user) {
             const instantiatedSalaries = salariesData.map((salaryData) => {

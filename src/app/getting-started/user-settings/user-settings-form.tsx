@@ -18,20 +18,20 @@ import { STEPS } from "../_lib/constants";
 import { useRouter } from "next/navigation";
 
 export default function UserSettingsForm({ user, nextStep }: { user: NonNullable<RouterOutputs['user']['get']>; nextStep: typeof STEPS[number] }) {
-    const router = useRouter()
+    const router = useRouter();
     const utils = api.useUtils();
     const { data: _user } = api.user.get.useQuery()
     const userSettingsForm = useForm<SettingsProfileInputType>({
         resolver: zodResolver(settingsProfileInputZod),
         defaultValues: {
             name: user.name,
-            image: user.image,
+            image: user.image ?? undefined,
         }
     });
 
     const mutation = api.user.set.useMutation({
         onMutate: async (input) => {
-            router.push(nextStep)
+            router.push(`/getting-started/${nextStep}`)
             await utils.user.get.cancel();
             const oldUserData = utils.user.get.getData();
             if ('name' in input) {
@@ -51,7 +51,7 @@ export default function UserSettingsForm({ user, nextStep }: { user: NonNullable
             if (ctx) {
                 utils.user.get.setData(undefined, ctx.oldUserData)
             }
-            router.push('user-settings')
+            router.push('/getting-started/user-settings')
         },
     });
     const profileImgMutation = api.user.setProfileImg.useMutation({
@@ -106,6 +106,7 @@ export default function UserSettingsForm({ user, nextStep }: { user: NonNullable
                                             profileImgMutation.mutate({ image: newImg });
                                         }}
                                         imageSrc={user.image}
+                                        userName={_user?.name || user.name}
                                     />
                                 </div>
                             </>

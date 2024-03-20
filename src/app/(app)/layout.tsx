@@ -7,12 +7,17 @@ import { TRPCReactProvider } from "~/lib/trpc/react";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
     if (session && !session?.user.completedOnboarding) {
+        console.log('🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯')
+        console.log(session)
+        console.log('🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯🤯')
         redirect('/getting-started/user-settings')
     }
 
     return (
         <>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
+            <TRPCReactProvider>
+                {children}
+            </TRPCReactProvider>
             <Toaster />
         </>
     )

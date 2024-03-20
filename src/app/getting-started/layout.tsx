@@ -24,7 +24,9 @@ export default async function GettingStartedLayout({
             className="min-h-screen text-black dark:bg-dark-primary dark:text-dark-neutral"
         >
             <div className="mx-auto px-4 py-6 md:py-24 relative sm:max-w-[600px]">
-                <TRPCReactProvider>{children}</TRPCReactProvider>
+                <TRPCReactProvider>
+                    {children}
+                </TRPCReactProvider>
                 <Toaster />
             </div>
         </div>

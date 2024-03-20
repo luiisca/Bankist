@@ -1,7 +1,7 @@
 'use client'
 
 import { api } from "~/lib/trpc/react";
-import { Avatar, AvatarFallback, AvatarImage } from "../../_components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/app/_components/avatar";
 
 export default function ProfileImage({ image, name }: { image?: string; name?: string }) {
     const { data: user } = api.user.get.useQuery()

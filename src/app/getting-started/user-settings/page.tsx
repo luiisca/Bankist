@@ -26,11 +26,11 @@ export default async function UserSettings() {
                     </p>
 
                     <p className="font-sans text-sm font-normal text-gray-500 dark:text-dark-600">
-                        We just need some basic info to get your profile setup. /n
+                        We just need some basic info to get your profile setup.
+                    </p>
+                    <p className="font-sans text-sm font-normal text-gray-500 dark:text-dark-600">
                         You’ll be able to edit this later.
                     </p>
-                    {/* <p className="font-sans text-sm font-normal text-gray-500 dark:text-dark-600"> */}
-                    {/* </p> */}
                 </header>
 
                 {/* step bar */}
