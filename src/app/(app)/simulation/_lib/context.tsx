@@ -2,16 +2,16 @@
 
 import { PropsWithChildren, createContext, useCallback, useReducer } from "react";
 import { toast } from "sonner";
-import { YearBalanceType, getTotalBalance } from "~/lib/simulation";
+import { AnnualIncomesExpensesType, calcNetWorthOverYears } from "~/lib/simulation";
 import { api } from "~/lib/trpc/react";
 import { RouterOutputs } from "~/lib/trpc/shared";
 
 export type TBalanceInitState = {
     years: number;
-    totalBalanceHidden: boolean;
-    totalBalanceLoading: boolean;
-    totalBalance: number;
-    balanceHistory: YearBalanceType[] | [];
+    finalNetWorthHidden: boolean;
+    finalNetWorthLoading: boolean;
+    finalNetWorth: number;
+    annualIncomesExpenses: AnnualIncomesExpensesType;
 };
 type TBalanceReducerState = TBalanceInitState
 export type ActionType =
@@ -34,11 +34,11 @@ export type ActionType =
     }
     | {
         type: "TOTAL_BAL_LOADING";
-        totalBalanceLoading: boolean;
+        finalNetWorthLoading: boolean;
     }
     | {
         type: "TOTAL_BAL_SET_HIDDEN";
-        totalBalanceHidden: boolean;
+        finalNetWorthHidden: boolean;
     }
 
 const createCtx = (
@@ -138,7 +138,7 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
 
             // data is in the right shape to run simulation algo
             if (categories.length > 0 && salaries.length > 0 && user) {
-                const { total: totalBalance, balanceHistory } = getTotalBalance({
+                const { finalNetWorth, annualIncomesExpenses } = calcNetWorthOverYears({
                     categories,
                     salaries,
                     investPerc: user.investPerc,
@@ -148,9 +148,9 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
 
                 return {
                     ...state,
-                    totalBalance,
-                    balanceHistory,
-                    totalBalanceLoading: false,
+                    finalNetWorth,
+                    annualIncomesExpenses,
+                    finalNetWorthLoading: false,
                 };
             } else {
                 return {
@@ -167,14 +167,14 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
         case "TOTAL_BAL_LOADING": {
             return {
                 ...state,
-                totalBalanceHidden: false,
-                totalBalanceLoading: action.totalBalanceLoading,
+                finalNetWorthHidden: false,
+                finalNetWorthLoading: action.finalNetWorthLoading,
             };
         }
         case "TOTAL_BAL_SET_HIDDEN": {
             return {
                 ...state,
-                totalBalanceHidden: action.totalBalanceHidden
+                finalNetWorthHidden: action.finalNetWorthHidden
             }
         }
 
@@ -186,10 +186,10 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
 
 const balanceInitState: TBalanceInitState = {
     years: 1,
-    totalBalanceHidden: true,
-    totalBalanceLoading: false,
-    totalBalance: 0,
-    balanceHistory: [],
+    finalNetWorthHidden: true,
+    finalNetWorthLoading: false,
+    finalNetWorth: 0,
+    annualIncomesExpenses: [],
 };
 
 const [ctx, BalanceProvider] = createCtx(balanceReducer, balanceInitState);
