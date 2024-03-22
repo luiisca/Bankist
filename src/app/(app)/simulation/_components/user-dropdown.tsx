@@ -7,8 +7,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import FeedbackMenuItem from "~/components/ui/support/feedback-menu-item";
 import { cn } from "~/lib/cn";
 import { signOut } from "../_lib/server-actions";
+import { Avatar, AvatarFallback, AvatarImage } from "~/app/_components/avatar";
+import { RouterOutputs } from "~/lib/trpc/shared";
 
-export default function UserDropdown({ small, sessionUser }: { small?: boolean; sessionUser?: Session['user'] }) {
+export default function UserDropdown({ small, staticUser }: { small?: boolean; staticUser: NonNullable<RouterOutputs['user']['get']> }) {
     const [feedbackOpen, setFeedbackOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const onFeedbackItemSelect = () => {
@@ -29,27 +31,19 @@ export default function UserDropdown({ small, sessionUser }: { small?: boolean; 
                     )}
                 >
                     {/*Image*/}
-                    <span
-                        className={cn(
-                            small ? "h-4 min-h-4 w-4 min-w-4" : "mr-2 h-5 min-h-5 w-5 min-w-5",
-                            "relative flex-shrink-0 rounded-full bg-gray-300 "
-                        )}
-                    >
-                        {
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                className="rounded-full"
-                                src={sessionUser?.image ?? ''}
-                                alt={sessionUser?.name ?? "Nameless User"}
-                            />
-                        }
-                    </span>
+                    <Avatar className={cn(
+                        small ? "h-4 min-h-4 w-4 min-w-4" : "mr-2 h-5 min-h-5 w-5 min-w-5",
+                        "bg-gray-300"
+                    )}>
+                        <AvatarImage src={staticUser.image} alt={staticUser.name} />
+                        <AvatarFallback>{(staticUser.name)?.toUpperCase().slice(0, 2)}</AvatarFallback>
+                    </Avatar>
                     {/*Text*/}
                     {!small && (
                         <span className="flex flex-grow items-center truncate">
                             <span className="flex-grow truncate text-sm">
                                 <span className="block truncate font-medium text-gray-900 dark:text-dark-neutral">
-                                    {sessionUser?.name || "Nameless User"}
+                                    {staticUser.name || "Nameless User"}
                                 </span>
                             </span>
                             <ChevronDown
