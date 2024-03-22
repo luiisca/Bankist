@@ -45,7 +45,7 @@ export default function SalaryForm({
     elKey: string;
     salary?: RouterOutputs["simulation"]["salaries"]["get"][0];
     defaultValues?: DefaultValues<SalInputType>;
-    user: RouterOutputs['user']['get'];
+    user: NonNullable<RouterOutputs['user']['get']>;
 }) {
     const { instantiatedSalaries, setInstantiatedSalaries } = useContext(SalariesContext)
     const utils = api.useUtils()
@@ -153,6 +153,7 @@ export default function SalaryForm({
             // UI
             let removedElPosition: number = 0;
             setInstantiatedSalaries((crrSalaries) => crrSalaries.filter((el, i) => {
+                console.log("setInstantiatedSalaries(), crrSalaries", crrSalaries, "el.key", el?.key, "elKey", elKey)
                 if (el?.key === elKey) {
                     removedElPosition = i
                 }
@@ -191,7 +192,7 @@ export default function SalaryForm({
                 setInstantiatedSalaries((crrSalaries) => {
                     const key = uuidv4()
                     return [
-                        ...crrSalaries.slice(0, ctx?.removedElPosition),
+                        ...crrSalaries.slice(0, ctx.removedElPosition),
                         <Fragment key={key}>
                             <SalaryForm
                                 elKey={key}
@@ -200,7 +201,7 @@ export default function SalaryForm({
                                 salary={salary}
                             />
                         </Fragment>,
-                        ...crrSalaries.slice(ctx?.removedElPosition),
+                        ...crrSalaries.slice(ctx.removedElPosition),
                     ]
                 })
                 // revert cache 
@@ -339,7 +340,7 @@ export default function SalaryForm({
                 <div>
                     <ControlledSelect<SalInputType>
                         control={control}
-                        getOptions={() => getCurrencyOptions({ countryCode: user?.country })}
+                        getOptions={() => getCurrencyOptions({ countryCode: user.country })}
                         name="currency"
                         label="Currency"
                     />

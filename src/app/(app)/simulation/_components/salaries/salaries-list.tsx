@@ -10,7 +10,7 @@ import { InstantiatedSalariesType, SalariesContext } from './salaries-provider';
 import { RouterOutputs } from '~/lib/trpc/shared';
 import EmptyScreen from '~/components/ui/empty-screen';
 
-export default function SalariesList({ staticUser }: { staticInstantiatedSalaries?: InstantiatedSalariesType; staticUser: RouterOutputs['user']['get'] }) {
+export default function SalariesList({ staticUser }: { staticInstantiatedSalaries?: InstantiatedSalariesType; staticUser: NonNullable<RouterOutputs['user']['get']> }) {
     const [salariesAnimationParentRef] = useAutoAnimate<HTMLDivElement>()
     const { instantiatedSalaries, setInstantiatedSalaries } = useContext(SalariesContext)
 

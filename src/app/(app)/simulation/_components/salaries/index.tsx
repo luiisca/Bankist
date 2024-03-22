@@ -6,19 +6,19 @@ import SalariesList from "./salaries-list";
 import SalaryForm from "./salary-form";
 import { SalariesProvider } from "./salaries-provider";
 
-export default function Salaries({ staticSalaries, staticUser }: { staticSalaries: RouterOutputs['simulation']['salaries']['get']; staticUser: RouterOutputs['user']['get'] }) {
+export default function Salaries({ staticSalaries, staticUser }: { staticSalaries: RouterOutputs['simulation']['salaries']['get']; staticUser: NonNullable<RouterOutputs['user']['get']> }) {
     let staticInstantiatedSalaries;
     if (staticSalaries.length > 0 && staticUser) {
         staticInstantiatedSalaries = staticSalaries.map((salary) => {
             const key = uuidv4()
             return (
-                <Fragment key={key}>
+                <div key={key}>
                     <SalaryForm
                         elKey={key}
                         user={staticUser}
                         salary={salary}
                     />
-                </Fragment>
+                </div>
             )
         })
     }
