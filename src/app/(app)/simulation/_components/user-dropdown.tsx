@@ -20,10 +20,10 @@ export default function UserDropdown({ small, staticUser }: { small?: boolean; s
 
     return (
         <DropdownMenu open={menuOpen} onOpenChange={() => setFeedbackOpen(false)}>
-            <DropdownMenuTrigger asChild onClick={() => setMenuOpen(true)}>
+            <DropdownMenuTrigger onClick={() => setMenuOpen(true)} asChild>
                 <button
                     className={cn(
-                        "group flex w-full cursor-pointer appearance-none items-center rounded-full p-2 text-left outline-none sm:ml-1 md:ml-0 md:rounded-md",
+                        "overflow-hidden group flex cursor-pointer appearance-none items-center rounded-full p-2 text-left outline-none sm:ml-1 md:ml-0 md:rounded-md",
                         "transition-all hover:bg-gray-100",
                         "dark:bg-dark-secondary dark:shadow-darkBorder dark:hover:border-dark-500 dark:hover:bg-dark-tertiary",
                         small &&
@@ -40,17 +40,15 @@ export default function UserDropdown({ small, staticUser }: { small?: boolean; s
                     </Avatar>
                     {/*Text*/}
                     {!small && (
-                        <span className="flex flex-grow items-center truncate">
-                            <span className="flex-grow truncate text-sm">
-                                <span className="block truncate font-medium text-gray-900 dark:text-dark-neutral">
-                                    {staticUser.name || "Nameless User"}
-                                </span>
-                            </span>
+                        <div className="flex flex-grow items-center overflow-hidden">
+                            <p className="flex-grow truncate text-sm font-medium text-gray-900 dark:text-dark-neutral">
+                                {staticUser.name || "Nameless User"}
+                            </p>
                             <ChevronDown
-                                className="h-4 w-4 flex-shrink-0 text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-400"
+                                className="min-h-4 min-w-4 h-4 w-4 text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-400"
                                 aria-hidden="true"
                             />
-                        </span>
+                        </div>
                     )}
                 </button>
             </DropdownMenuTrigger>

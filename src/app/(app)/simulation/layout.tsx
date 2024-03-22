@@ -6,15 +6,25 @@ import { Settings } from "lucide-react"
 import UserDropdown from "./_components/user-dropdown"
 import { Button } from "~/components/ui"
 import Nav from "./_components/nav"
-import { auth } from "~/app/(auth)/auth"
 import { BalanceProvider } from "./_lib/context"
+import { api } from "~/lib/trpc/server"
+import { Alert } from "~/components/ui/alert"
 
 export default async function SimulationLayout({
     children, // will be a page or nested layout
 }: {
     children: React.ReactNode
 }) {
-    const session = await auth();
+    const user = await api.user.get.query()
+    if (!user) {
+        return (
+            <Alert
+                severity="error"
+                title="Something went wrong"
+                message='Could not get user data. Please reload the page'
+            />
+        )
+    };
 
     return (
         <div className="flex h-screen overflow-hidden">
@@ -24,11 +34,9 @@ export default async function SimulationLayout({
                 )}
             >
                 <div className="flex h-0 flex-1 flex-col pb-4 pt-3 lg:pt-5">
-                    <header className="items-center justify-between space-x-2 md:hidden lg:flex">
-                        <div className="hidden w-full lg:inline">
-                            <UserDropdown sessionUser={session?.user} />
-                        </div>
-                        <ThemeButton className="relative hidden lg:flex" />
+                    <header className="items-center justify-between space-x-2 hidden lg:flex">
+                        <UserDropdown staticUser={user} />
+                        <ThemeButton />
                     </header>
 
                     {/* logo icon for tablet */}
@@ -39,9 +47,7 @@ export default async function SimulationLayout({
                     <Nav />
                 </div>
 
-                <div className="mb-2 flex flex-col items-center">
-                    <ThemeButton className="mb-2 lg:hidden" />
-                </div>
+                <ThemeButton className="mb-3 mx-auto lg:hidden" />
             </aside>
             <div className="flex w-0 flex-1 flex-col overflow-hidden">
                 <main className="relative z-0 flex flex-1 flex-col overflow-y-auto bg-white focus:outline-none  dark:bg-dark-primary">
@@ -61,7 +67,7 @@ export default async function SimulationLayout({
                                     />
                                 </Link>
                             </Button>
-                            <UserDropdown sessionUser={session?.user} small />
+                            <UserDropdown staticUser={user} small />
                         </div>
                     </nav>
 
