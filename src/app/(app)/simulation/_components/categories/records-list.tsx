@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { Button, Label, NumberInput, TextField, Tooltip } from "~/components/ui";
+import { Button, Label, NumberInput, TextInput, Tooltip } from "~/components/ui";
 import { useEffect, useState } from "react";
 import {
     FieldValues,
@@ -49,10 +49,10 @@ const Record = ({
 
             {/* <Title /> */}
             <div>
-                <TextField
+                <TextInput
+                    name={`records.${index}.title`}
                     label="Title"
                     placeholder=""
-                    {...register(`records.${index}.title`)}
                 />
             </div>
             {/* <Amount /> */}
@@ -86,7 +86,7 @@ const Record = ({
                             <Label htmlFor='disable'>Inflation</Label>
                             <ControlledSwitch control={control} name={`records.${index}.inflEnabled`} />
                         </div>
-                        {!recordInflEnabledWatcher && (
+                        {recordInflEnabledWatcher && (
                             <div className="flex space-x-3">
                                 {/* country Select */}
                                 <div className="flex-[1_1_80%]">
@@ -165,9 +165,9 @@ export default function RecordsList({
     });
     const { formState: { errors }, control } = form;
     const { fields, append, remove } = fieldArray;
-    const [titleValWatcher, typeWatcher, inflValWatcher, currencyWatcher, watchLatestRecordInflType] = useWatch({
+    const [titleValWatcher, typeWatcher, inflEnabledWather, inflValWatcher, currencyWatcher, watchLatestRecordInflType] = useWatch({
         control,
-        name: ["title", "type", "inflVal", "currency", `records.${fields.length - 1}.type`],
+        name: ["title", "type", "inflEnabled", "inflVal", "currency", `records.${fields.length - 1}.type`],
     });
 
     const newRecordDefaultShape = {
@@ -175,6 +175,7 @@ export default function RecordsList({
         amount: "" as unknown as number,
         type: getSelectOptionWithFallback(typeWatcher?.value as OptionsType, SELECT_OUTCOME_VAL),
         frequency: DEFAULT_FREQUENCY,
+        inflEnabled: inflEnabledWather,
         inflType: watchLatestRecordInflType?.value !== "income",
         country: {
             value: user.country,
