@@ -30,7 +30,18 @@ export const userRouter = createTRPCRouter({
         }
     }),
     set: protectedProcedure
-        .input(settingsProfileInputZod.or(settingsSimInputZod))
+        .input(
+            settingsProfileInputZod.extend({
+                name: z.string(),
+            }).or(settingsSimInputZod.extend({
+                country: z.string(),
+                currency: z.string(),
+                inflation: z.number(),
+                investPerc: z.number(),
+                indexReturn: z.number(),
+                completedOnboarding: z.boolean().optional()
+            }))
+        )
         .mutation(async ({ input, ctx }) => {
             const { db, user } = ctx;
 
@@ -103,38 +114,4 @@ export const userRouter = createTRPCRouter({
             },
         });
     }),
-    submitFeedback: protectedProcedure
-        .input(
-            z.object({
-                rating: z.string(),
-                comment: z.string().optional(),
-            })
-        )
-        .mutation(async ({ input, ctx }) => {
-            const { rating, comment } = input;
-
-            if (!ctx.user) {
-                throw new TRPCError({ message: ErrorCode.UserNotFound, code: "NOT_FOUND" });
-            }
-
-            const feedback: Feedback = {
-                name: ctx.user.name ?? "Nameless",
-                email: ctx.user.email ?? "No email address",
-                rating: rating,
-                comment: comment,
-            };
-
-            await ctx.db.feedback.create({
-                data: {
-                    userId: ctx.user.id,
-                    rating: rating,
-                    comment: comment,
-                },
-            });
-            if (!feedback.rating) {
-                throw new TRPCError({ message: "Rating is required", code: "BAD_REQUEST" })
-            }
-
-            sendFeedbackEmail(feedback);
-        }),
 });

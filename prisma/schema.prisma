@@ -10,11 +10,11 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-// generator zod {
-//     provider = "zod-prisma"
-//     output   = "./zod"
-//     imports  = "./zod-utils"
-// }
+generator zod {
+    provider = "zod-prisma"
+    output   = "./zod"
+    imports  = "./zod-utils"
+}
 
 // Necessary for Next auth
 model Account {
@@ -28,7 +28,6 @@ model Account {
     token_type        String?
     scope             String?
     id_token          String?
-    session_state     String?
 
     user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId String
@@ -45,17 +44,14 @@ model Account {
 // }
 
 model User {
-    id                  String     @id @default(cuid())
-    /// @zod.custom(imports.username)
-    username            String?
-    name                String?
-    email               String?    @unique
+    id                  String    @id @default(cuid())
+    name                String
+    email               String?   @unique
     emailVerified       DateTime?
     image               String?
-    completedOnboarding Boolean    @default(false)
+    completedOnboarding Boolean   @default(false)
     accounts            Account[]
     // sessions            Session[]
-    Feedback            Feedback[]
 
     country     String @default("US")
     inflation   Int    @default(8)
@@ -65,16 +61,6 @@ model User {
 
     salary     Salary[]
     categories Category[]
-}
-
-model Feedback {
-    id      BigInt   @id @default(autoincrement())
-    date    DateTime @default(now())
-    rating  String
-    comment String?
-
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId String
 }
 
 model VerificationToken {
@@ -87,14 +73,14 @@ model VerificationToken {
 
 model Salary {
     id         BigInt   @id @default(autoincrement())
-    title      String   @default("Salary")
-    currency   String   @default("USD")
+    title      String
+    currency   String
     amount     Int
-    taxType    String   @default("perCat")
-    taxPercent Int      @default(30)
+    taxType    String
+    taxPercent Int
     variance   Period[]
 
-    user   User   @relation(fields: [userId], references: [id])
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId String
 }
 
@@ -105,38 +91,39 @@ model Period {
 
     salary     Salary @relation(fields: [salaryId], references: [id], onDelete: Cascade)
     salaryId   BigInt
-    taxPercent Int    @default(30)
+    taxPercent Int
 }
 
 model Category {
-    id        BigInt @id @default(autoincrement())
-    title     String
-    budget    Int
-    currency  String @default("USD")
-    type      String @default("outcome")
-    inflType  String @default("perCat")
-    country   String
-    inflVal   Int
-    icon      String
-    freqType  String @default("perCat")
-    frequency Int    @default(12)
+    id          BigInt  @id @default(autoincrement())
+    title       String
+    budget      Int
+    currency    String
+    type        String
+    inflEnabled Boolean
+    inflType    String
+    country     String
+    inflVal     Int
+    icon        String
+    freqType    String
+    frequency   Int
 
-    user    User     @relation(fields: [userId], references: [id])
+    user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId  String
     records Record[]
 }
 
 model Record {
-    id        BigInt  @id @default(autoincrement())
-    title     String?
-    amount    Int
-    type      String
-    frequency Int
-    inflType  Boolean @default(true)
-    country   String
-    inflation Int
-    currency  String
+    id          BigInt  @id @default(autoincrement())
+    title       String?
+    amount      Int
+    type        String
+    frequency   Int
+    inflEnabled Boolean
+    country     String
+    inflation   Int
+    currency    String
 
-    category   Category @relation(fields: [categoryId], references: [id])
+    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
     categoryId BigInt
 }
