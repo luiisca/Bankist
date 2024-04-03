@@ -36,7 +36,6 @@ import { api } from "~/lib/trpc/react";
 import { SalariesContext } from "./salaries-provider";
 import { BalanceHistoryContext } from "../../_lib/balance-history-context";
 import { BalanceContext } from "../../_lib/balance-context";
-import log from "~/lib/lib";
 
 export default function SalaryForm({
     elKey,
@@ -402,6 +401,7 @@ export default function SalaryForm({
                                 color="destructive"
                                 className="border-2 px-3 font-normal"
                                 StartIcon={() => <Trash2 className="m-0" />}
+                                disabled={salaryMutation.isLoading}
                             />
                         </DialogTrigger>
                         <DialogContentConfirmation
@@ -428,6 +428,7 @@ export default function SalaryForm({
                         color="destructive"
                         className="border-2 px-3 font-normal"
                         StartIcon={() => <Trash2 className="m-0" />}
+                        disabled={salaryMutation.isLoading}
                     />
                 )}
             </div>

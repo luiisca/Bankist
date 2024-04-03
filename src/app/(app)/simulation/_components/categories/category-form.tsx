@@ -458,6 +458,7 @@ export default function CategoryForm({
                                 color="destructive"
                                 className="border-2 px-3 font-normal"
                                 StartIcon={() => <Trash2 className="m-0" />}
+                                disabled={categoryMutation.isLoading}
                             />
                         </DialogTrigger>
                         <DialogContentConfirmation
@@ -484,6 +485,7 @@ export default function CategoryForm({
                         color="destructive"
                         className="border-2 px-3 font-normal"
                         StartIcon={() => <Trash2 className="m-0" />}
+                        disabled={categoryMutation.isLoading}
                     />
                 )}
             </div>
