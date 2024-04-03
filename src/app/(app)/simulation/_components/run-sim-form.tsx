@@ -3,18 +3,24 @@
 import { useContext } from "react";
 import { useForm } from "react-hook-form";
 
-import { BalanceContext } from "../_lib/context";
 import { MAX_YEARS, MIN_YEARS } from "~/lib/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Form, NumberInput, transIntoInt } from "~/components/ui";
+import { Button, Form, NumberInput } from "~/components/ui";
 import { RunSimInputType, runSimInputZod } from "prisma/zod-utils";
-import debounce from "~/lib/debounce";
+import { api } from "~/lib/trpc/react";
+import shouldRunSim from "../_lib/should-run-sim";
+import { toast } from "sonner";
+import { BalanceContext } from "../_lib/balance-context";
+import { BalanceHistoryContext } from "../_lib/balance-history-context";
 
 export default function RunSimForm() {
+    const utils = api.useUtils()
+
     const {
-        state: { totalBalanceLoading },
+        state: { finalNetWorthLoading },
         dispatch: balanceDispatch,
     } = useContext(BalanceContext);
+    const { dispatch: balanceHistoryDispatch } = useContext(BalanceHistoryContext)
 
     const runSimForm = useForm<RunSimInputType>({
         resolver: zodResolver(runSimInputZod),
@@ -24,24 +30,26 @@ export default function RunSimForm() {
     });
     const { control } = runSimForm;
 
-
     return (
         <Form
             form={runSimForm}
             handleSubmit={(values: RunSimInputType) => {
-                console.log("run-sim for run!")
-                balanceDispatch({
-                    type: "TOTAL_BAL_LOADING",
-                    totalBalanceLoading: true
-                })
-                balanceDispatch({
-                    type: "YEARS_UPDATED",
-                    years: Number(values.years),
-                });
-                balanceDispatch({
-                    type: "SIM_RUN",
-                    years: Number(values.years),
-                });
+                const salariesData = utils.simulation.salaries.get.getData() ?? []
+                const categoriesData = utils.simulation.categories.get.getData() ?? []
+                const { _shouldRunSim, errorMessage } = shouldRunSim(categoriesData, salariesData)
+
+                if (_shouldRunSim) {
+                    balanceDispatch({
+                        type: "SIM_RUN",
+                        years: values.years,
+                    });
+                    balanceHistoryDispatch({
+                        type: "SET_SELECTED_YEAR",
+                        selectedYear: values.years
+                    })
+                } else {
+                    toast.error(errorMessage)
+                }
             }}
             className="my-6 flex justify-start"
         >
@@ -53,25 +61,14 @@ export default function RunSimForm() {
                 onChange={(parsedValue: number) => {
                     if (parsedValue > MAX_YEARS) return MAX_YEARS;
 
-                    balanceDispatch({
-                        type: "TOTAL_BAL_LOADING",
-                        totalBalanceLoading: true
-                    })
-                    debounce(() => {
-                        balanceDispatch({
-                            type: "YEARS_UPDATED",
-                            years: Number(parsedValue),
-                        });
-                        balanceDispatch({
-                            type: "SIM_RUN",
-                            years: Number(parsedValue),
-                        });
-                    }, 1500)()
-
                     return parsedValue;
                 }}
             />
-            <Button type='submit' disabled={!!runSimForm.formState.errors.years} loading={totalBalanceLoading} type="submit" className="self-end rounded-l-none px-4 py-2">
+            <Button
+                type='submit'
+                loading={finalNetWorthLoading}
+                className="self-end rounded-l-none px-4 py-2"
+            >
                 Run
             </Button>
         </Form>

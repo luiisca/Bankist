@@ -13,8 +13,6 @@ export const AccountModel = z.object({
   token_type: z.string().nullish(),
   scope: z.string().nullish(),
   id_token: z.string().nullish(),
-  session_state: z.string().nullish(),
-  refresh_token_expires_in: z.number().int(),
   userId: z.string(),
 })
 

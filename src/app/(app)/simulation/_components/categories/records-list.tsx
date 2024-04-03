@@ -16,7 +16,7 @@ import Switch from '~/components/ui/core/switch';
 import TitleWithInfo from '../title-with-info';
 import { getCountryOptionLabel, getCurrencyLocaleName, getCurrencyOptions } from '~/lib/sim-settings';
 import { CatInputType } from 'prisma/zod-utils';
-import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_OUTCOME_VAL, SELECT_PER_REC_VAL, getSelectOptionWithFallback } from '~/lib/constants';
+import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_EXPENSE_VAL, SELECT_PER_REC_VAL, getSelectOptionWithFallback } from '~/lib/constants';
 import { RouterOutputs } from '~/lib/trpc/shared';
 import useUpdateInflation from '~/app/(app)/_lib/use-update-inflation';
 import { ControlledSelect, ControlledSwitch } from '~/components/ui/core/form/select/Select';
@@ -70,7 +70,7 @@ const Record = ({
                     control={control}
                     getOptions={() => BASIC_BAL_TYPES}
                     onChange={(option) => {
-                        setValue(`records.${index}.inflEnabled`, option.value === 'outcome')
+                        setValue(`records.${index}.inflEnabled`, option.value === 'expense')
 
                         return option;
                     }}
@@ -78,8 +78,8 @@ const Record = ({
                     label="Type"
                 />
             </div>
-            {(inflEnabledWather && ((typeWatcher?.value === "income" && recordTypeWatcher?.value === "outcome") ||
-                (typeWatcher?.value === "outcome" && inflTypeWatcher?.value === "perRec" && recordTypeWatcher?.value === "outcome"))) && (
+            {(inflEnabledWather && ((typeWatcher?.value === "income" && recordTypeWatcher?.value === "expense") ||
+                (typeWatcher?.value === "expense" && inflTypeWatcher?.value === "perRec" && recordTypeWatcher?.value === "expense"))) && (
                     <>
                         {/* inflEnabled switch */}
                         <div className="mb-4 flex items-center space-x-2">
@@ -173,7 +173,7 @@ export default function RecordsList({
     const newRecordDefaultShape = {
         title: "",
         amount: "" as unknown as number,
-        type: getSelectOptionWithFallback(typeWatcher?.value as OptionsType, SELECT_OUTCOME_VAL),
+        type: getSelectOptionWithFallback(typeWatcher?.value as OptionsType, SELECT_EXPENSE_VAL),
         frequency: DEFAULT_FREQUENCY,
         inflEnabled: inflEnabledWather,
         inflType: watchLatestRecordInflType?.value !== "income",
@@ -240,7 +240,6 @@ export default function RecordsList({
                         disabled={isMutationLoading}
                         className="mt-3"
                         onClick={() => {
-                            console.log('newRecordDefaultShape', newRecordDefaultShape)
                             append(newRecordDefaultShape);
                         }}
                     >

@@ -19,7 +19,7 @@ export default function ThemeButton({ className }: { className?: string }) {
                 type="button"
                 className={cn(
                     className || "",
-                    "flex h-9 w-9 items-center justify-center rounded-lg",
+                    "flex min-h-9 min-w-9 h-9 w-9 items-center justify-center rounded-lg",
                     "transition-all hover:bg-gray-100",
                     "dark:bg-dark-secondary dark:shadow-darkBorder dark:hover:border-dark-500 dark:hover:bg-dark-tertiary",
                 )}

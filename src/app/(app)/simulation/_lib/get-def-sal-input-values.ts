@@ -2,10 +2,10 @@ import { DEFAULT_COUNTRY, DEFAULT_CURRENCY, OptionsType, SELECT_PER_CAT_VAL, get
 import { getCurrencyLocaleName } from "~/lib/sim-settings";
 import { RouterOutputs } from "~/lib/trpc/shared";
 
-export default function getDefSalInputValues({ salary, user }: { salary?: RouterOutputs["simulation"]["salaries"]["get"][0]; user?: RouterOutputs['user']['get'] }) {
-    const currency = salary?.currency || user?.currency || DEFAULT_CURRENCY;
+export default function getDefSalInputValues({ salary, user }: { salary?: RouterOutputs["simulation"]["salaries"]["get"][0]; user: NonNullable<RouterOutputs['user']['get']> }) {
+    const currency = salary?.currency || user.currency || DEFAULT_CURRENCY;
     const taxType = salary?.taxType as OptionsType
-    const userCountry = user?.country || DEFAULT_COUNTRY;
+    const userCountry = user.country || DEFAULT_COUNTRY;
 
     const optionFields = {
         currency: {
@@ -17,7 +17,7 @@ export default function getDefSalInputValues({ salary, user }: { salary?: Router
 
 
     let defaultValues;
-    if (salary || user) {
+    if (salary) {
         defaultValues = {
             ...salary,
             ...optionFields,

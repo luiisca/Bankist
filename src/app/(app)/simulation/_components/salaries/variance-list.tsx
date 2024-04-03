@@ -50,7 +50,6 @@ const Period = ({
                 control={control}
                 name={`variance.${position}.from`}
                 onChange={(parsedValue: number) => {
-                    console.log('varianceArrWatcher', varianceArrWatcher)
                     if (!varianceArrWatcher) return parsedValue;
 
                     // validate all fields on every keystroke

@@ -1,15 +1,15 @@
-import { DEFAULT_COUNTRY, DEFAULT_CURRENCY, OptionsType, SELECT_PER_CAT_VAL, SELECT_OUTCOME_VAL, getSelectOptionWithFallback, DEFAULT_FREQUENCY, getSelectOption } from "~/lib/constants";
+import { DEFAULT_COUNTRY, DEFAULT_CURRENCY, OptionsType, SELECT_PER_CAT_VAL, SELECT_EXPENSE_VAL, getSelectOptionWithFallback, DEFAULT_FREQUENCY, getSelectOption } from "~/lib/constants";
 import { getCountryOptionLabel, getCurrencyLocaleName } from "~/lib/sim-settings";
 import { RouterOutputs } from "~/lib/trpc/shared";
 
-export default function getDefCatInputValues({ category, user }: { category?: RouterOutputs["simulation"]["categories"]["get"][0]; user?: RouterOutputs['user']['get'] }) {
-    const currency = category?.currency || user?.currency || DEFAULT_CURRENCY;
-    const userCountry = user?.country || DEFAULT_COUNTRY;
+export default function getDefCatInputValues({ category, user }: { category?: RouterOutputs["simulation"]["categories"]["get"][0]; user: NonNullable<RouterOutputs['user']['get']> }) {
+    const currency = category?.currency || user.currency || DEFAULT_CURRENCY;
+    const userCountry = user.country || DEFAULT_COUNTRY;
     const catCountry = category?.country || userCountry;
     const inflType = category?.inflType as OptionsType
     const type = category?.type as OptionsType;
     const freqType = category?.freqType as OptionsType;
-    const inflVal = category?.inflVal || user?.inflation;
+    const inflVal = category?.inflVal || user.inflation;
     const frequency = category?.frequency || DEFAULT_FREQUENCY;
 
     const optionFields = {
@@ -22,13 +22,13 @@ export default function getDefCatInputValues({ category, user }: { category?: Ro
             label: getCountryOptionLabel(catCountry),
         },
         inflType: getSelectOptionWithFallback(inflType, SELECT_PER_CAT_VAL),
-        type: getSelectOptionWithFallback(type, SELECT_OUTCOME_VAL),
+        type: getSelectOptionWithFallback(type, SELECT_EXPENSE_VAL),
         freqType: getSelectOptionWithFallback(freqType, SELECT_PER_CAT_VAL),
     }
 
 
     let defaultValues;
-    if (category || user) {
+    if (category) {
         defaultValues = {
             ...category,
             ...optionFields,
@@ -41,11 +41,11 @@ export default function getDefCatInputValues({ category, user }: { category?: Ro
                 },
                 currency: {
                     value: record.currency,
-                    label: getCurrencyLocaleName(record.currency, user?.country)
+                    label: getCurrencyLocaleName(record.currency, user.country)
                 },
                 type: getSelectOption(record.type as OptionsType),
                 title: record.title || "",
-                inflation: record.inflation || user?.inflation,
+                inflation: record.inflation || user.inflation,
             })),
             frequency,
         }
@@ -53,6 +53,7 @@ export default function getDefCatInputValues({ category, user }: { category?: Ro
         defaultValues = {
             ...optionFields,
             frequency,
+            inflEnabled: true,
         }
     }
 

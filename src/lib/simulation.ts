@@ -1,4 +1,5 @@
 import { DEFAULT_FREQUENCY, MAX_YEARS, MIN_YEARS } from "./constants";
+import log from "./lib";
 import { RouterOutputs } from "./trpc/shared";
 
 export type AnnualIncomesExpensesType = {
@@ -23,7 +24,7 @@ const convertToUSD = (currency: string, amount: number) => {
 
 const getRate = (x: number) => x / 100;
 
-const getSalaryBreakdownForYear = (salary: RouterOutputs["simulation"]["salaries"]["get"][0], reqYear: number) => {
+export function getSalaryBreakdownForYear(salary: RouterOutputs["simulation"]["salaries"]["get"][0], reqYear: number) {
     let yearlyAmount = salary.amount;
     let yearlyTaxes = salary.taxPercent;
     const v = salary.variance;
@@ -41,24 +42,34 @@ const getSalaryBreakdownForYear = (salary: RouterOutputs["simulation"]["salaries
             const foundInLastPeriod = lastPeriodYear && reqYear >= lastPeriodYear
 
             if (foundInCrrPeriod) {
-                return {
-                    amount: crrPeriod.amount,
-                    taxPercent: crrPeriod.taxPercent,
-                };
+                yearlyAmount = crrPeriod.amount;
+                yearlyTaxes = crrPeriod.taxPercent;
+
+                break;
             }
 
             if (foundInLastPeriod) {
-                return {
-                    amount: lastPeriod.amount,
-                    taxPercent: lastPeriod.taxPercent,
-                };
+                yearlyAmount = lastPeriod.amount;
+                yearlyTaxes = lastPeriod.taxPercent;
+
+                break;
             }
         }
     }
 
+    const taxPercent =
+        salary.taxType == "perCat"
+            ? salary.taxPercent
+            : yearlyTaxes;
+    const amountBefTax = salary.variance
+        ? yearlyAmount
+        : salary.amount;
+    const amountAftTax = amountBefTax * (1 - getRate(taxPercent))
+
     return {
-        amount: yearlyAmount,
-        taxPercent: yearlyTaxes,
+        taxPercent,
+        amountBefTax,
+        amountAftTax,
     };
 };
 
@@ -111,18 +122,18 @@ export const calcNetWorthOverYears = ({
         const crrYear = index + 1;
         let crrYearTotalIncome = 0;
         let crrYearTotalExpense = 0;
-        let crrYearCategoriesIncomesExpenses: AnnualIncomesExpensesType['categoriesIncomesExpenses'] = [] as AnnualIncomesExpensesType['categoriesIncomesExpenses'];
+        let crrYearCategoriesIncomesExpenses: AnnualIncomesExpensesType['categoriesIncomesExpenses'] = Array(categories.length).fill(null);
         let crrYearSalaryBreakdowns: AnnualIncomesExpensesType['salaryBreakdowns'] = [] as AnnualIncomesExpensesType['salaryBreakdowns'];
         ////
 
         // categories
-        categories.forEach((crrCat, crrCatIndex: number) => {
+        categories.forEach((crrCat, crrCatIndex) => {
             const crrCatHasRecords = crrCat.records && crrCat.records.length > 0
 
             if (!crrCatHasRecords) {
                 // helpers
                 const isCrrCatIncome = crrCat.type === "income";
-                const isCrrCatExpense = crrCat.type === "outcome";
+                const isCrrCatExpense = crrCat.type === "expense";
                 const inflationDisabled = isCrrCatIncome || !crrCat.inflEnabled;
                 const inflationEnabled = isCrrCatExpense && crrCat.inflEnabled;
 
@@ -133,7 +144,8 @@ export const calcNetWorthOverYears = ({
 
                 if (inflationDisabled) {
                     const balance = calcCrrYearBalance({ budget: crrCatBudget, frequency, crrYear });
-                    crrYearCategoriesIncomesExpenses.push(balance)
+
+                    crrYearCategoriesIncomesExpenses[crrCatIndex] = balance
 
                     if (isCrrCatIncome) {
                         crrYearTotalIncome += balance
@@ -153,7 +165,8 @@ export const calcNetWorthOverYears = ({
                 if (inflationEnabled) {
                     const prevBalance = annualIncomesExpenses[index - 1]?.categoriesIncomesExpenses[crrCatIndex] ?? crrCatBudget
                     const balance = calcCrrYearBalance({ inflation: crrCat.inflVal, budget: prevBalance as number, frequency, crrYear })
-                    crrYearCategoriesIncomesExpenses.push(balance)
+
+                    crrYearCategoriesIncomesExpenses[crrCatIndex] = balance
 
                     if (isCrrCatIncome) {
                         crrYearTotalIncome += balance
@@ -185,7 +198,7 @@ export const calcNetWorthOverYears = ({
 
                         // helpers
                         const isCrrRecIncome = crrRec.type === "income";
-                        const isCrrRecExpense = crrRec.type === "outcome";
+                        const isCrrRecExpense = crrRec.type === "expense";
                         const inflationDisabled = crrCat.inflEnabled && (isCrrRecIncome || !crrRec.inflEnabled);
                         const inflationEnabled = crrCat.inflEnabled && (isCrrRecExpense && crrRec.inflEnabled);
 
@@ -197,7 +210,9 @@ export const calcNetWorthOverYears = ({
 
                         if (inflationDisabled) {
                             const balance = calcCrrYearBalance({ budget: crrRecAmount, frequency });
-                            (crrYearCategoriesIncomesExpenses[crrCatIndex] as number[]).push(balance);
+
+                            crrYearCategoriesIncomesExpenses[crrCatIndex] = crrYearCategoriesIncomesExpenses[crrCatIndex] ?? [];
+                            (crrYearCategoriesIncomesExpenses[crrCatIndex] as number[]).push(balance)
 
                             if (isCrrRecIncome) {
                                 crrYearTotalIncome += balance
@@ -222,6 +237,8 @@ export const calcNetWorthOverYears = ({
                                     ? getRate(crrRec.inflation)
                                     : getRate(crrCat.inflVal);
                             const balance = P * (1 + i);
+
+                            crrYearCategoriesIncomesExpenses[crrCatIndex] = crrYearCategoriesIncomesExpenses[crrCatIndex] ?? [];
                             (crrYearCategoriesIncomesExpenses[crrCatIndex] as number[]).push(balance);
 
                             if (isCrrRecIncome) {
@@ -249,24 +266,10 @@ export const calcNetWorthOverYears = ({
         salaries.forEach((salary) => {
             const crrYearSalaryBreakdown = getSalaryBreakdownForYear(salary, crrYear);
 
-            const taxPercent =
-                salary.taxType == "perCat"
-                    ? salary.taxPercent
-                    : crrYearSalaryBreakdown.taxPercent;
-            const amountBefTax = salary.variance
-                ? crrYearSalaryBreakdown.amount
-                : salary.amount;
-            const amountAftTax = amountBefTax * (1 - getRate(taxPercent))
+            crrYearSalaryBreakdowns.push(crrYearSalaryBreakdown)
 
-            crrYearSalaryBreakdowns.push({
-                amountBefTax,
-                amountAftTax,
-                taxPercent
-            })
-
-            crrYearTotalIncome += amountAftTax
+            crrYearTotalIncome += crrYearSalaryBreakdown.amountAftTax
         })
-
 
         // update annualIncomesExpenses
         annualIncomesExpenses[index] = {

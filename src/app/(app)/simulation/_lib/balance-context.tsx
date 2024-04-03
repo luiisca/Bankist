@@ -8,12 +8,12 @@ import { RouterOutputs } from "~/lib/trpc/shared";
 
 export type TBalanceInitState = {
     years: number;
-    finalNetWorthHidden: boolean;
+    finalNetWorthHidden: boolean | null;
     finalNetWorthLoading: boolean;
     finalNetWorth: number;
-    annualIncomesExpenses: AnnualIncomesExpensesType;
+    annualIncomesExpenses: AnnualIncomesExpensesType[];
 };
-type TBalanceReducerState = TBalanceInitState
+export type TBalanceReducerState = TBalanceInitState
 export type ActionType =
     | {
         type: "SIM_RUN";
@@ -29,16 +29,16 @@ export type ActionType =
         }
     }
     | {
-        type: "YEARS_UPDATED";
-        years: number;
-    }
-    | {
         type: "TOTAL_BAL_LOADING";
         finalNetWorthLoading: boolean;
     }
     | {
         type: "TOTAL_BAL_SET_HIDDEN";
         finalNetWorthHidden: boolean;
+    }
+    | {
+        type: "SET",
+        state: TBalanceReducerState
     }
 
 const createCtx = (
@@ -51,11 +51,11 @@ const createCtx = (
         dispatch: defaultDispatch,
     });
 
-    const Provider = (props: PropsWithChildren) => {
+    const Provider = (props: PropsWithChildren & {
+        staticState: TBalanceReducerState
+    }) => {
         const utils = api.useUtils();
-        const [state, dispatch] = useReducer(reducer, {
-            ...initialState,
-        });
+        const [state, dispatch] = useReducer(reducer, props.staticState);
         const customDispatch = useCallback(async (action: ActionType) => {
             switch (action.type) {
                 case "SIM_RUN": {
@@ -82,6 +82,8 @@ const createCtx = (
                         return;
                     }
                     // data is here but incomplete due to user
+                    // TODO - probably unneded since it seems like SIM_RUN is only called
+                    // when data is valid
                     const noCategories = categories.length === 0
                     const noSalaries = salaries.length === 0
                     if (noCategories || noSalaries) {
@@ -148,21 +150,17 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
 
                 return {
                     ...state,
+                    years,
                     finalNetWorth,
                     annualIncomesExpenses,
                     finalNetWorthLoading: false,
+                    finalNetWorthHidden: false,
                 };
             } else {
                 return {
                     ...state
                 }
             }
-        }
-        case "YEARS_UPDATED": {
-            return {
-                ...state,
-                years: action.years,
-            };
         }
         case "TOTAL_BAL_LOADING": {
             return {
@@ -177,6 +175,12 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
                 finalNetWorthHidden: action.finalNetWorthHidden
             }
         }
+        case "SET": {
+            return {
+                ...state,
+                ...action.state,
+            }
+        }
 
         default: {
             return state;
@@ -186,7 +190,7 @@ const balanceReducer = (state: TBalanceReducerState, action: ActionType) => {
 
 const balanceInitState: TBalanceInitState = {
     years: 1,
-    finalNetWorthHidden: true,
+    finalNetWorthHidden: null,
     finalNetWorthLoading: false,
     finalNetWorth: 0,
     annualIncomesExpenses: [],

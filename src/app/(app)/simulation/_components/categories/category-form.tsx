@@ -39,7 +39,6 @@ import { Dialog, DialogTrigger } from "~/components/ui/core/dialog";
 import { DialogContentConfirmation } from "~/components/ui/custom-dialog";
 import TitleWithInfo from "../title-with-info";
 import { CountryInflInput, CountrySelect } from "~/app/_components/fields";
-import { BalanceContext } from "../../_lib/context";
 import useUpdateInflation from "~/app/(app)/_lib/use-update-inflation";
 import getDefCatInputValues from "../../_lib/get-def-cat-input-values";
 import handleBalanceLoadingState from "../../_lib/handle-balance-loading-state";
@@ -47,6 +46,8 @@ import parseCatInputData from "~/app/(app)/_lib/parse-cat-input-data";
 import shouldRunSim from "../../_lib/should-run-sim";
 import { api } from "~/lib/trpc/react";
 import { CategoriesContext } from "./categories-provider";
+import { BalanceHistoryContext } from "../../_lib/balance-history-context";
+import { BalanceContext } from "../../_lib/balance-context";
 
 export default function CategoryForm({
     elKey,
@@ -60,6 +61,8 @@ export default function CategoryForm({
     user: NonNullable<RouterOutputs["user"]["get"]>;
 }) {
     const { instantiatedCategories, setInstantiatedCategories } = useContext(CategoriesContext)
+    const { dispatch: balanceHistoryDispatch } = useContext(BalanceHistoryContext)
+
     const utils = api.useUtils()
     // form
     const categoryForm = useForm<CatInputType>({
@@ -87,34 +90,45 @@ export default function CategoryForm({
             // optimistic update
             await utils.simulation.categories.get.cancel();
             const { parsedCategory, parsedRecords } = input
-            const oldCachedinstantiatedCategoriesData = utils.simulation.categories.get.getData() ?? []
+            const oldCachedCategoriesData = utils.simulation.categories.get.getData() ?? []
+            let updatedElIndex: number | null = null;
+
             if (transactionType === 'update') {
-                let updatedElPosition: number = 0;
-                instantiatedCategories.find((el, i) => {
-                    if (el?.key === elKey) {
-                        updatedElPosition = i
+                updatedElIndex = instantiatedCategories.findIndex((el) => el?.key === elKey)
 
-                        return el
-                    }
-                })
+                if (updatedElIndex !== null) {
+                    // @ts-expect-error
+                    utils.simulation.categories.get.setData(undefined, [
+                        ...oldCachedCategoriesData.slice(0, updatedElIndex),
+                        { ...parsedCategory, records: parsedRecords ?? [] },
+                        ...oldCachedCategoriesData.slice(updatedElIndex + 1),
+                    ])
 
-                // @ts-expect-error
-                utils.simulation.categories.get.setData(undefined, [
-                    ...oldCachedinstantiatedCategoriesData.slice(0, updatedElPosition),
-                    { ...parsedCategory, records: parsedRecords ?? [] },
-                    ...oldCachedinstantiatedCategoriesData.slice(updatedElPosition + 1),
-                ])
+                }
             } else if (transactionType === 'create') {
                 // @ts-expect-error
-                utils.simulation.categories.get.setData(undefined, [...oldCachedinstantiatedCategoriesData, { ...parsedCategory, records: parsedRecords ?? [] }])
+                utils.simulation.categories.get.setData(undefined, [...oldCachedCategoriesData, { ...parsedCategory, records: parsedRecords ?? [] }])
             }
 
             // wether run sim
             const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const instantiatedCategoriesData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(instantiatedCategoriesData, salariesData), balanceDispatch, action: { type: 'ON_MUTATE' } })
+            const categoriesData = utils.simulation.categories.get.getData()!
+            const { _shouldRunSim } = shouldRunSim(categoriesData, salariesData)
+            handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
 
-            return { oldCachedinstantiatedCategoriesData, shouldRunSim }
+            // update balance history
+            _shouldRunSim && balanceHistoryDispatch({
+                type: 'ADD_OR_UPDATE',
+                payload: {
+                    action: transactionType === 'create' ? 'ADD' : 'UPDATE',
+                    type: 'category',
+                    ...(updatedElIndex === null ? {} : { index: updatedElIndex }),
+                    // @ts-expect-error
+                    data: { ...parsedCategory, records: parsedRecords ?? [] },
+                }
+            })
+
+            return { oldCachedCategoriesData, updatedElIndex }
         },
         onSuccess: (category) => {
             if (category) {
@@ -126,14 +140,14 @@ export default function CategoryForm({
 
                 // update cached category id
                 if (transactionType === 'create') {
-                    const oldCachedinstantiatedCategoriesData = utils.simulation.salaries.get.getData() ?? []
-                    if (oldCachedinstantiatedCategoriesData.length > 0) {
-                        const salariesUpToLatest = oldCachedinstantiatedCategoriesData.slice(0, oldCachedCatsData.length - 1)
-                        const latestSalary = oldCachedinstantiatedCategoriesData[oldCachedCatsData.length - 1]!
-                        utils.simulation.salaries.get.setData(undefined, [
-                            ...salariesUpToLatest,
+                    const oldCachedCategoriesData = utils.simulation.categories.get.getData() ?? []
+                    if (oldCachedCategoriesData.length > 0) {
+                        const categoriesUpToLatest = oldCachedCategoriesData.slice(0, oldCachedCategoriesData.length - 1)
+                        const latestCategory = oldCachedCategoriesData[oldCachedCategoriesData.length - 1]!
+                        utils.simulation.categories.get.setData(undefined, [
+                            ...categoriesUpToLatest,
                             {
-                                ...latestSalary,
+                                ...latestCategory,
                                 id: categoryId.current as bigint
                             }
                         ])
@@ -142,55 +156,74 @@ export default function CategoryForm({
 
                 transactionType === 'create' && setTransactionType('update')
             }
-
-            // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const instantiatedCategoriesData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(instantiatedCategoriesData, salariesData), balanceDispatch, action: { type: 'ON_SUCCESS', years } })
         },
-        onError: () => {
+        onError: (e, v, ctx) => {
             toast.error("Could not add category. Please try again");
 
-            // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const instantiatedCategoriesData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(instantiatedCategoriesData, salariesData), balanceDispatch, action: { type: 'ON_ERROR' } })
+            if (ctx) {
+                // revert cache
+                utils.simulation.categories.get.setData(undefined, ctx.oldCachedCategoriesData)
+
+                // wether run sim
+                const salariesData = utils.simulation.salaries.get.getData() ?? []
+                const categoriesData = utils.simulation.categories.get.getData() ?? []
+                const { _shouldRunSim } = shouldRunSim(categoriesData, salariesData)
+                handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
+
+                // update balance history
+                if (typeof ctx.updatedElIndex === 'number') {
+                    balanceHistoryDispatch({
+                        type: 'UNDO'
+                    })
+                } else {
+                    balanceHistoryDispatch({
+                        type: 'REMOVE',
+                        payload: {
+                            type: 'category',
+                            index: categoriesData.length
+                        }
+                    })
+                }
+            }
         },
     });
     const deleteCategoryMutation = api.simulation.categories.delete.useMutation({
         onMutate: async () => {
             // optimistic update
+            let removedElIndex = instantiatedCategories.findIndex((el) => el?.key === elKey)
             // UI
-            let removedElPosition: number = 0;
-            setInstantiatedCategories((crrCats) => crrCats.filter((el, i) => {
-                if (el?.key === elKey) {
-                    removedElPosition = i
-                }
-                return el?.key !== elKey
-            }))
+            setInstantiatedCategories((crrCats) => {
+                return [...crrCats.slice(0, removedElIndex), ...crrCats.slice(removedElIndex + 1)]
+            })
+
             // cache
             await utils.simulation.categories.get.cancel();
-            const oldCachedinstantiatedCategoriesData = utils.simulation.categories.get.getData()
-            const newinstantiatedCategoriesData = [
-                ...oldCachedinstantiatedCategoriesData?.slice(0, removedElPosition) ?? [],
-                ...oldCachedinstantiatedCategoriesData?.slice(removedElPosition + 1) ?? []
+            const oldCachedCategoriesData = utils.simulation.categories.get.getData()
+            const newCategoriesData = [
+                ...oldCachedCategoriesData?.slice(0, removedElIndex) ?? [],
+                ...oldCachedCategoriesData?.slice(removedElIndex + 1) ?? []
             ]
-            utils.simulation.categories.get.setData(undefined, newinstantiatedCategoriesData)
-
-            // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData()
-            const instantiatedCategoriesData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(instantiatedCategoriesData, salariesData), balanceDispatch, action: { type: 'ON_MUTATE' } })
-
-            return { oldCachedinstantiatedCategoriesData, removedElPosition }
-        },
-        onSuccess: () => {
-            toast.success("Category deleted");
+            utils.simulation.categories.get.setData(undefined, newCategoriesData)
 
             // wether run sim
             const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const instantiatedCategoriesData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(instantiatedCategoriesData, salariesData), balanceDispatch, action: { type: 'ON_SUCCESS', years } })
+            const categoriesData = utils.simulation.categories.get.getData() ?? []
+            const { _shouldRunSim } = shouldRunSim(categoriesData, salariesData)
+            handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
+
+            // update balance history
+            balanceHistoryDispatch({
+                type: 'REMOVE',
+                payload: {
+                    type: 'category',
+                    index: removedElIndex
+                }
+            })
+
+            return { oldCachedCategoriesData, removedElIndex }
+        },
+        onSuccess: () => {
+            toast.success("Category deleted");
         },
         onError: (e, v, ctx) => {
             toast.error("Could not delete category. Please try again.");
@@ -201,7 +234,7 @@ export default function CategoryForm({
                 setInstantiatedCategories((crrCats) => {
                     const key = uuidv4()
                     return [
-                        ...crrCats.slice(0, ctx.removedElPosition),
+                        ...crrCats.slice(0, ctx.removedElIndex),
                         <Fragment key={key}>
                             <CategoryForm
                                 elKey={key}
@@ -210,17 +243,23 @@ export default function CategoryForm({
                                 category={category}
                             />
                         </Fragment>,
-                        ...crrCats.slice(ctx.removedElPosition),
+                        ...crrCats.slice(ctx.removedElIndex),
                     ]
                 })
 
                 // revert cache 
-                utils.simulation.categories.get.setData(undefined, ctx.oldCachedinstantiatedCategoriesData)
+                utils.simulation.categories.get.setData(undefined, ctx.oldCachedCategoriesData)
 
                 // wether run sim
                 const salariesData = utils.simulation.salaries.get.getData() ?? []
-                const instantiatedCategoriesData = utils.simulation.categories.get.getData()
-                handleBalanceLoadingState({ shouldRunSim: shouldRunSim(instantiatedCategoriesData, salariesData), balanceDispatch, action: { type: 'ON_ERROR' } })
+                const categoriesData = utils.simulation.categories.get.getData() ?? []
+                const { _shouldRunSim } = shouldRunSim(categoriesData, salariesData)
+                handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
+
+                // update balance history
+                balanceHistoryDispatch({
+                    type: 'UNDO',
+                })
             }
         },
     });
@@ -319,7 +358,7 @@ export default function CategoryForm({
                 </div>
             </div>
 
-            {typeWatcher?.value === "outcome" && (
+            {typeWatcher?.value === "expense" && (
                 <>
                     <div>
                         {/* inflation label */}
@@ -349,7 +388,7 @@ export default function CategoryForm({
                         )}
                     </div>
 
-                    {typeWatcher?.value === "outcome" &&
+                    {typeWatcher?.value === "expense" &&
                         inflTypeWatcher?.value === "perCat" && (
                             <div className="flex space-x-3">
                                 {/* country Select */}

@@ -2,20 +2,19 @@ import { Badge } from "~/components/ui/badge";
 import TitleWithInfo from "../title-with-info";
 
 export function ListItem({
-    category,
     infoBubble,
+    title,
+    type,
+    total,
+    record,
+    parentTitle
 }: {
     infoBubble?: React.ReactNode;
-    category: {
-        icon?: string;
-        title: string | null;
-        parentTitle?: string;
-        type: string;
-        inflation?: number;
-        frequency?: number;
-        spent: number;
-        record?: boolean;
-    };
+    title: string | null;
+    type: string;
+    total: number;
+    record?: boolean;
+    parentTitle?: string;
 }): JSX.Element {
     return (
         <li>
@@ -24,22 +23,22 @@ export function ListItem({
                     <div className="flex-grow truncate text-sm">
                         <div className="space-x-2">
                             <span className="truncate font-medium text-neutral-900 dark:text-dark-neutral">
-                                {category.title}
+                                {title}
                             </span>
                             <Badge
                                 variant={
-                                    category.type === "income" || category.type === "salary"
+                                    type === "income" || type === "salary"
                                         ? "green"
                                         : "red"
                                 }
                                 className="text-xs"
                             >
-                                {category.type}
+                                {type}
                             </Badge>
                         </div>
-                        {category.record && (
+                        {record && (
                             <p className="mt-1 text-xs text-neutral-500 dark:text-dark-600">
-                                {category.parentTitle}
+                                {parentTitle}
                             </p>
                         )}
                     </div>
@@ -48,7 +47,7 @@ export function ListItem({
                     <TitleWithInfo
                         Title={() => (
                             <p className="mx-1 mr-5 text-lg font-medium text-neutral-900 dark:text-dark-neutral">
-                                {category.spent}
+                                {total}
                             </p>
                         )}
                         infoCont={
@@ -60,7 +59,7 @@ export function ListItem({
                     />
                 ) : (
                     <p className="mx-1 mr-5 text-lg font-medium text-neutral-900 dark:text-dark-neutral">
-                        {category.spent}
+                        {total}
                     </p>
                 )}
             </div>

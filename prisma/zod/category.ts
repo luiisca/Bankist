@@ -8,6 +8,7 @@ export const CategoryModel = z.object({
   budget: z.number().int(),
   currency: z.string(),
   type: z.string(),
+  inflEnabled: z.boolean(),
   inflType: z.string(),
   country: z.string(),
   inflVal: z.number().int(),

@@ -6,9 +6,9 @@ import { Settings } from "lucide-react"
 import UserDropdown from "./_components/user-dropdown"
 import { Button } from "~/components/ui"
 import Nav from "./_components/nav"
-import { BalanceProvider } from "./_lib/context"
 import { api } from "~/lib/trpc/server"
 import { Alert } from "~/components/ui/alert"
+import { BalanceProvider } from "./_lib/balance-context"
 
 export default async function SimulationLayout({
     children, // will be a page or nested layout
@@ -72,11 +72,9 @@ export default async function SimulationLayout({
                     </nav>
 
                     <div className="flex flex-col px-4 py-2 lg:px-12 lg:py-8">
-                        {/* <ErrorBoundary> */}
                         {/* add padding to top for mobile when App Bar is fixed */}
                         <div className="pt-14 sm:hidden" />
-                        <BalanceProvider>{children}</BalanceProvider>
-                        {/* </ErrorBoundary> */}
+                        {children}
                     </div>
                 </main>
             </div>

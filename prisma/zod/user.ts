@@ -1,14 +1,13 @@
 import * as z from "zod"
 import * as imports from "../zod-utils"
-import { CompleteAccount, RelatedAccountModel, CompleteSession, RelatedSessionModel, CompleteFeedback, RelatedFeedbackModel, CompleteSalary, RelatedSalaryModel, CompleteCategory, RelatedCategoryModel } from "./index"
+import { CompleteAccount, RelatedAccountModel, CompleteSalary, RelatedSalaryModel, CompleteCategory, RelatedCategoryModel } from "./index"
 
 export const UserModel = z.object({
   id: z.string(),
-  username: imports.username.nullish(),
-  name: z.string().nullish(),
+  name: z.string(),
   email: z.string().nullish(),
   emailVerified: z.date().nullish(),
-  avatar: z.string().nullish(),
+  image: z.string().nullish(),
   completedOnboarding: z.boolean(),
   country: z.string(),
   inflation: z.number().int(),
@@ -19,8 +18,6 @@ export const UserModel = z.object({
 
 export interface CompleteUser extends z.infer<typeof UserModel> {
   accounts: CompleteAccount[]
-  sessions: CompleteSession[]
-  Feedback: CompleteFeedback[]
   salary: CompleteSalary[]
   categories: CompleteCategory[]
 }
@@ -32,8 +29,6 @@ export interface CompleteUser extends z.infer<typeof UserModel> {
  */
 export const RelatedUserModel: z.ZodSchema<CompleteUser> = z.lazy(() => UserModel.extend({
   accounts: RelatedAccountModel.array(),
-  sessions: RelatedSessionModel.array(),
-  Feedback: RelatedFeedbackModel.array(),
   salary: RelatedSalaryModel.array(),
   categories: RelatedCategoryModel.array(),
 }))

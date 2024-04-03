@@ -8,7 +8,7 @@ export const RecordModel = z.object({
   amount: z.number().int(),
   type: z.string(),
   frequency: z.number().int(),
-  inflType: z.boolean(),
+  inflEnabled: z.boolean(),
   country: z.string(),
   inflation: z.number().int(),
   currency: z.string(),

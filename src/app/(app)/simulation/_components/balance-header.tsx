@@ -3,11 +3,17 @@
 import { cn } from "~/lib/cn";
 import { formatAmount } from "~/lib/sim-settings";
 import TitleWithInfo from "./title-with-info";
-import { BalanceContext } from "../_lib/context";
 import { useContext } from "react";
+import { BalanceContext } from "../_lib/balance-context";
 
-export default function BalanceHeader() {
-    const { state: { totalBalance, totalBalanceHidden, totalBalanceLoading, balanceHistory } } = useContext(BalanceContext)
+export default function BalanceHeader({
+    staticFinalNetWorth,
+    staticFinalNetWorthHidden
+}: {
+    staticFinalNetWorth?: number;
+    staticFinalNetWorthHidden: boolean | null
+}) {
+    const { state: { finalNetWorth, finalNetWorthHidden, finalNetWorthLoading, annualIncomesExpenses } } = useContext(BalanceContext)
 
     return (
         <div className="flex items-baseline sm:mt-0 mb-4 lg:mb-10 z-10">
@@ -34,18 +40,18 @@ export default function BalanceHeader() {
                     "flex-shrink-0 sm:relative sm:bottom-auto sm:right-auto sm:z-0"
                 )}
             >
-                <div className={totalBalanceHidden ? "hidden" : ""}>
+                <div className={(finalNetWorthHidden ?? staticFinalNetWorthHidden) ? "hidden" : ""}>
                     <TitleWithInfo
                         Title={() => (
                             <div className="ml-2 text-3xl text-black dark:text-dark-neutral ">
-                                {formatAmount(totalBalance)}
+                                {formatAmount(finalNetWorth || staticFinalNetWorth || 0)}
                             </div>
                         )}
                         infoCont={
                             <div className="text-md px-3 py-2">
                                 Your total balance after{" "}
-                                {balanceHistory.length === 1 ? "one" : balanceHistory.length}
-                                {balanceHistory.length === 1 ? " year" : " years"} based{" "}
+                                {annualIncomesExpenses.length === 1 ? "one" : annualIncomesExpenses.length}
+                                {annualIncomesExpenses.length === 1 ? " year" : " years"} based{" "}
                                 <br />
                                 on salary variations, expenses, incomes, and yearly
                                 investments <br />
@@ -57,7 +63,7 @@ export default function BalanceHeader() {
                             "fixed right-5 top-2 z-[999999] flex-row-reverse rounded-lg px-3 py-2 ",
                             "bg-gray-50 ring-1 ring-gray-100",
                             "dark:bg-dark-secondary dark:shadow-darkBorder dark:ring-dark-400",
-                            totalBalanceLoading && "animate-pulse"
+                            finalNetWorthLoading && "animate-pulse"
                         )}
                         tooltipSide="bottom"
                     />

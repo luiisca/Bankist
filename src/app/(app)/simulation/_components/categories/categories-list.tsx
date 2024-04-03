@@ -6,11 +6,12 @@ import { Button } from "~/components/ui";
 import CategoryForm from './category-form';
 import { Fragment, useContext } from 'react';
 import { Plus } from 'lucide-react';
-import { InstantiatedCategoriesType, CategoriesContext } from './categories-provider';
-import { RouterOutputs } from '~/lib/trpc/shared';
+import { CategoriesContext } from './categories-provider';
 import EmptyScreen from '~/components/ui/empty-screen';
+import { api } from '~/lib/trpc/react';
 
-export default function CategoriesList({ staticUser }: { staticInstantiatedCategories?: InstantiatedCategoriesType; staticUser: NonNullable<RouterOutputs['user']['get']> }) {
+export default function CategoriesList() {
+    const utils = api.useUtils()
     const { instantiatedCategories, setInstantiatedCategories } = useContext(CategoriesContext)
     const [categoriesAnimationParentRef] = useAutoAnimate<HTMLDivElement>()
 
@@ -21,13 +22,14 @@ export default function CategoriesList({ staticUser }: { staticInstantiatedCateg
                 StartIcon={Plus}
                 onClick={() => {
                     const key = uuidv4()
+                    const user = utils.user.get.getData()! // always available since seeded at start
                     setInstantiatedCategories((befNewCatData) => (
                         [
                             ...befNewCatData,
                             <Fragment key={key}>
                                 <CategoryForm
                                     elKey={key}
-                                    user={staticUser}
+                                    user={user}
                                 />
                             </Fragment>
                         ]

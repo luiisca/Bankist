@@ -9,7 +9,7 @@ import {
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { AlertTriangle, Percent, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Percent, Trash2 } from "lucide-react";
 import {
     Button,
     Form,
@@ -27,7 +27,6 @@ import { getCurrencyOptions } from "~/lib/sim-settings";
 import { SalInputType, salInputZod } from "prisma/zod-utils";
 import { RouterOutputs } from "~/lib/trpc/shared";
 import VarianceList from "./variance-list";
-import { BalanceContext } from "../../_lib/context";
 import getDefSalInputValues from "../../_lib/get-def-sal-input-values";
 import debounce from "~/lib/debounce";
 import handleBalanceLoadingState from "../../_lib/handle-balance-loading-state";
@@ -35,6 +34,9 @@ import parseSalaryInputData from "~/app/(app)/_lib/parse-salary-input-data";
 import shouldRunSim from "../../_lib/should-run-sim";
 import { api } from "~/lib/trpc/react";
 import { SalariesContext } from "./salaries-provider";
+import { BalanceHistoryContext } from "../../_lib/balance-history-context";
+import { BalanceContext } from "../../_lib/balance-context";
+import log from "~/lib/lib";
 
 export default function SalaryForm({
     elKey,
@@ -48,8 +50,9 @@ export default function SalaryForm({
     user: NonNullable<RouterOutputs['user']['get']>;
 }) {
     const { instantiatedSalaries, setInstantiatedSalaries } = useContext(SalariesContext)
-    const utils = api.useUtils()
+    const { dispatch: balanceHistoryDispatch } = useContext(BalanceHistoryContext)
 
+    const utils = api.useUtils()
     // form
     const salaryForm = useForm<SalInputType>({
         resolver: zodResolver(salInputZod),
@@ -74,39 +77,49 @@ export default function SalaryForm({
         onMutate: async (input) => {
             // optimistic update
             await utils.simulation.salaries.get.cancel();
-            const oldCachedSalariesData = utils.simulation.salaries.get.getData() ?? []
             const { parsedSalary, parsedVariance } = input
+            const oldCachedSalariesData = utils.simulation.salaries.get.getData() ?? []
+            let updatedElIndex: number | null = null;
+
             if (transactionType === 'update') {
-                let updatedElPosition: number = 0;
-                instantiatedSalaries.find((el, i) => {
-                    if (el?.key === elKey) {
-                        updatedElPosition = i
+                updatedElIndex = instantiatedSalaries.findIndex((el) => el?.key === elKey)
 
-                        return el
-                    }
-                })
-
-                // @ts-expect-error
-                utils.simulation.salaries.get.setData(undefined, [
-                    ...oldCachedSalariesData.slice(0, updatedElPosition),
-                    { ...parsedSalary, variance: parsedVariance ?? [] },
-                    ...oldCachedSalariesData.slice(updatedElPosition + 1),
-                ])
+                if (updatedElIndex !== null) {
+                    // @ts-expect-error
+                    utils.simulation.salaries.get.setData(undefined, [
+                        ...oldCachedSalariesData.slice(0, updatedElIndex),
+                        { ...parsedSalary, variance: parsedVariance ?? [] },
+                        ...oldCachedSalariesData.slice(updatedElIndex + 1),
+                    ])
+                }
             } else if (transactionType === 'create') {
                 // @ts-expect-error
                 utils.simulation.salaries.get.setData(undefined, [...oldCachedSalariesData, { ...parsedSalary, variance: parsedVariance ?? [] }])
             }
 
             // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const catsData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(catsData, salariesData), balanceDispatch, action: { type: 'ON_MUTATE' } })
+            const salariesData = utils.simulation.salaries.get.getData()!
+            const catsData = utils.simulation.categories.get.getData() ?? []
+            const { _shouldRunSim } = shouldRunSim(catsData, salariesData)
+            handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
 
-            return { oldCachedSalariesData }
+            // update balance history
+            balanceHistoryDispatch({
+                type: 'ADD_OR_UPDATE',
+                payload: {
+                    action: transactionType === 'create' ? 'ADD' : 'UPDATE',
+                    type: 'salary',
+                    ...(updatedElIndex === null ? {} : { index: updatedElIndex }),
+                    // @ts-expect-error
+                    data: { ...parsedSalary, variance: parsedVariance ?? [] },
+                }
+            })
+
+            return { oldCachedSalariesData, updatedElIndex }
         },
         onSuccess: (salary) => {
             if (salary) {
-                toast.success(`Salary ${transactionType ? "updated" : "created"}`);
+                toast.success(`Salary ${transactionType === 'update' ? "updated" : "created"}`);
                 salaryId.current = salary.id
                 setValue('id', salary.id)
                 setValue('periodsIdsToRemove', [])
@@ -130,19 +143,35 @@ export default function SalaryForm({
 
                 transactionType === 'create' && setTransactionType('update')
             }
-
-            // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const catsData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(catsData, salariesData), balanceDispatch, action: { type: 'ON_SUCCESS', years } })
         },
-        onError: () => {
+        onError: (e, v, ctx) => {
             toast.error("Could not add salary. Please try again");
 
-            // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const catsData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(catsData, salariesData), balanceDispatch, action: { type: 'ON_ERROR' } })
+            if (ctx) {
+                // revert cache
+                utils.simulation.salaries.get.setData(undefined, ctx.oldCachedSalariesData)
+
+                // wether run sim
+                const salariesData = utils.simulation.salaries.get.getData() ?? []
+                const catsData = utils.simulation.categories.get.getData()
+                const { _shouldRunSim } = shouldRunSim(catsData, salariesData)
+                handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
+
+                // update balance history
+                if (typeof ctx.updatedElIndex === 'number') {
+                    balanceHistoryDispatch({
+                        type: 'UNDO'
+                    })
+                } else {
+                    balanceHistoryDispatch({
+                        type: 'REMOVE',
+                        payload: {
+                            type: 'salary',
+                            index: salariesData.length
+                        }
+                    })
+                }
+            }
         },
     });
 
@@ -150,38 +179,40 @@ export default function SalaryForm({
     const deleteSalaryMutation = api.simulation.salaries.delete.useMutation({
         onMutate: async () => {
             // optimistic update
+            let removedElIndex = instantiatedSalaries.findIndex((el) => el?.key === elKey)
             // UI
-            let removedElPosition: number = 0;
-            setInstantiatedSalaries((crrSalaries) => crrSalaries.filter((el, i) => {
-                console.log("setInstantiatedSalaries(), crrSalaries", crrSalaries, "el.key", el?.key, "elKey", elKey)
-                if (el?.key === elKey) {
-                    removedElPosition = i
-                }
-                return el?.key !== elKey
-            }))
+            setInstantiatedSalaries((crrSalaries) => {
+                return [...crrSalaries.slice(0, removedElIndex), ...crrSalaries.slice(removedElIndex + 1)]
+            })
+
             // cache
             await utils.simulation.salaries.get.cancel();
             const oldCachedSalariesData = utils.simulation.salaries.get.getData() ?? []
             const newSalariesData = [
-                ...oldCachedSalariesData.slice(0, removedElPosition),
-                ...oldCachedSalariesData.slice(removedElPosition + 1)
+                ...oldCachedSalariesData.slice(0, removedElIndex),
+                ...oldCachedSalariesData.slice(removedElIndex + 1)
             ]
             utils.simulation.salaries.get.setData(undefined, newSalariesData)
 
             // wether run sim
             const salariesData = utils.simulation.salaries.get.getData()
             const catsData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(catsData, salariesData), balanceDispatch, action: { type: 'ON_MUTATE' } })
+            const { _shouldRunSim } = shouldRunSim(catsData, salariesData)
+            handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
 
-            return { oldCachedSalariesData, removedElPosition }
+            // update balance history
+            balanceHistoryDispatch({
+                type: 'REMOVE',
+                payload: {
+                    type: 'salary',
+                    index: removedElIndex
+                }
+            })
+
+            return { oldCachedSalariesData, removedElIndex }
         },
         onSuccess: () => {
             toast.success("Salary deleted");
-
-            // wether run sim
-            const salariesData = utils.simulation.salaries.get.getData() ?? []
-            const catsData = utils.simulation.categories.get.getData()
-            handleBalanceLoadingState({ shouldRunSim: shouldRunSim(catsData, salariesData), balanceDispatch, action: { type: 'ON_SUCCESS', years } })
         },
         onError: (e, v, ctx) => {
             toast.error("Could not delete salary. Please try again.");
@@ -192,7 +223,7 @@ export default function SalaryForm({
                 setInstantiatedSalaries((crrSalaries) => {
                     const key = uuidv4()
                     return [
-                        ...crrSalaries.slice(0, ctx.removedElPosition),
+                        ...crrSalaries.slice(0, ctx.removedElIndex),
                         <Fragment key={key}>
                             <SalaryForm
                                 elKey={key}
@@ -201,7 +232,7 @@ export default function SalaryForm({
                                 salary={salary}
                             />
                         </Fragment>,
-                        ...crrSalaries.slice(ctx.removedElPosition),
+                        ...crrSalaries.slice(ctx.removedElIndex),
                     ]
                 })
                 // revert cache 
@@ -210,7 +241,13 @@ export default function SalaryForm({
                 // wether run sim
                 const salariesData = utils.simulation.salaries.get.getData() ?? []
                 const catsData = utils.simulation.categories.get.getData()
-                handleBalanceLoadingState({ shouldRunSim: shouldRunSim(catsData, salariesData), balanceDispatch, action: { type: 'ON_ERROR' } })
+                const { _shouldRunSim } = shouldRunSim(catsData, salariesData)
+                handleBalanceLoadingState({ shouldRunSim: _shouldRunSim, balanceDispatch, years })
+
+                // update balance history
+                balanceHistoryDispatch({
+                    type: 'UNDO',
+                })
             }
         },
     });

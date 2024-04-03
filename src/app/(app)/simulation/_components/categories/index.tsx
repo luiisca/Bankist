@@ -25,7 +25,7 @@ const Categories = ({ staticCategories, staticUser }: { staticCategories: Router
 
     return (
         <CategoriesProvider staticInstantiatedCategories={staticInstantiatedCategories || []}>
-            <CategoriesList staticUser={staticUser} />
+            <CategoriesList />
         </CategoriesProvider>
     )
 };
