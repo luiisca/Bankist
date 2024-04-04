@@ -16,7 +16,7 @@ import Switch from '~/components/ui/core/switch';
 import TitleWithInfo from '../title-with-info';
 import { getCountryOptionLabel, getCurrencyLocaleName, getCurrencyOptions } from '~/lib/sim-settings';
 import { CatInputType } from 'prisma/zod-utils';
-import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, OptionsType, SELECT_EXPENSE_VAL, SELECT_PER_REC_VAL, getSelectOptionWithFallback } from '~/lib/constants';
+import { BASIC_BAL_TYPES, DEFAULT_FREQUENCY, MAX_FREQUENCY, OptionsType, SELECT_EXPENSE_VAL, SELECT_PER_REC_VAL, getSelectOptionWithFallback } from '~/lib/constants';
 import { RouterOutputs } from '~/lib/trpc/shared';
 import useUpdateInflation from '~/app/(app)/_lib/use-update-inflation';
 import { ControlledSelect, ControlledSwitch } from '~/components/ui/core/form/select/Select';
@@ -122,6 +122,7 @@ const Record = ({
                         label="Yearly Frequency"
                         placeholder=""
                         addOnSuffix={<span>p.a.</span>}
+                        onChange={(parsedValue: number) => parsedValue > MAX_FREQUENCY ? MAX_FREQUENCY : parsedValue}
                     />
                 </div>
             )}

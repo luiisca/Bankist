@@ -32,6 +32,7 @@ import {
     CATEGORY_INFL_TYPES,
     BASIC_BAL_TYPES,
     BASIC_GROUP_TYPES,
+    MAX_FREQUENCY,
 } from "~/lib/constants";
 import RecordsList from "./records-list";
 import { ControlledSelect, ControlledSwitch } from "~/components/ui/core/form/select/Select";
@@ -433,6 +434,7 @@ export default function CategoryForm({
                         name="frequency"
                         label="Yearly Frequency (opt.)"
                         placeholder={`${DEFAULT_FREQUENCY}`}
+                        onChange={(parsedValue: number) => parsedValue > MAX_FREQUENCY ? MAX_FREQUENCY : parsedValue}
                     />
                 </div>
             )}
