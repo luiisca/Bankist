@@ -108,7 +108,7 @@ export default function BalanceHistoryList() {
 
                                     if (category.records) {
                                         const records = category.records;
-                                        const recordElements = records.elements.filter((_, index) => records.types[index] === crrFilter)
+                                        const recordElements = records.elements.filter((_, index) => records.types[index] && crrFilter.includes(records.types[index]!))
                                         elements.push(...recordElements)
                                     }
 
