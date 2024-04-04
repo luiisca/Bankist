@@ -24,11 +24,6 @@ export default function BalanceHistoryList() {
     const { state: { instantiatedBalanceHistoryItems, selectedYear }, dispatch: balanceHistoryDispatch } = useContext(BalanceHistoryContext)
     const { state: { annualIncomesExpenses } } = useContext(BalanceContext);
 
-    const [selectedYearIE, setSelectedYearIE] = useState(annualIncomesExpenses[selectedYear - 1] as AnnualIncomesExpensesType)
-    useEffect(() => {
-        setSelectedYearIE(annualIncomesExpenses[selectedYear - 1] as AnnualIncomesExpensesType)
-    }, [annualIncomesExpenses])
-
     const utils = api.useUtils()
     useEffect(() => {
         const categories = utils.simulation.categories.get.getData()
@@ -126,24 +121,24 @@ export default function BalanceHistoryList() {
                         </ul>
                     </div>
 
-                    {selectedYearIE && (
+                    {annualIncomesExpenses[selectedYear - 1] && (
                         <div className="mt-4 flex w-full justify-between px-3">
-                            {selectedYearIE.totalIncome && (
+                            {annualIncomesExpenses[selectedYear - 1]?.totalIncome && (
                                 <p className="text-md text-green-400">
                                     INCOME:{" "}
                                     <span className="text-xl">
                                         {formatAmount(
-                                            Math.abs(selectedYearIE.totalIncome)
+                                            Math.abs(annualIncomesExpenses[selectedYear - 1]!.totalIncome)
                                         )}
                                     </span>
                                 </p>
                             )}
-                            {selectedYearIE.totalExpense && (
+                            {annualIncomesExpenses[selectedYear - 1]?.totalExpense && (
                                 <p className="text-md text-red-400">
                                     EXPENSE:{" "}
                                     <span className="text-xl">
                                         {formatAmount(
-                                            Math.abs(selectedYearIE.totalExpense)
+                                            Math.abs(annualIncomesExpenses[selectedYear - 1]!.totalExpense)
                                         )}
                                     </span>
                                 </p>
