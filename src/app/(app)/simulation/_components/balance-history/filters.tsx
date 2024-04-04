@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import capitalize from "~/lib/capitalize";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/core/dropdown-menu";
@@ -17,8 +17,11 @@ export default function Filters({ crrFilterState }: {
 }) {
     const { state: { years: simulatedYears } } = useContext(BalanceContext);
     const { state: { selectedYear }, dispatch } = useContext(BalanceHistoryContext)
-    const [selectedYearInputValue, setSelectedYearInputValue] = useState<number | "">(selectedYear)
     const [crrFilter, setCrrFilter] = crrFilterState;
+    const [selectedYearInputValue, setSelectedYearInputValue] = useState<number | "">(selectedYear)
+    useEffect(() => {
+        setSelectedYearInputValue(selectedYear)
+    }, [selectedYear])
 
     const dropdownMenuRef = useRef<null | HTMLDivElement>(null);
 
@@ -78,20 +81,20 @@ export default function Filters({ crrFilterState }: {
                     }
 
                     if (parsedValue <= 0) {
+                        setSelectedYearInputValue(1)
                         dispatch({
                             type: 'SET_SELECTED_YEAR',
                             selectedYear: 1
                         })
-                        setSelectedYearInputValue(1)
 
                         return;
                     }
 
+                    setSelectedYearInputValue(parsedValue > simulatedYears ? simulatedYears : parsedValue)
                     dispatch({
                         type: 'SET_SELECTED_YEAR',
                         selectedYear: parsedValue > simulatedYears ? simulatedYears : parsedValue
                     })
-                    setSelectedYearInputValue(parsedValue > simulatedYears ? simulatedYears : parsedValue)
                 }}
                 value={selectedYearInputValue}
             />
