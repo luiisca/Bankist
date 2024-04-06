@@ -116,8 +116,10 @@ const Period = ({
 
 export default function VarianceList({
     isMutationLoading,
+    enabledState
 }: {
     isMutationLoading: boolean;
+    enabledState: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 }) {
     // form
     const form = useFormContext<SalInputType>();
@@ -125,7 +127,7 @@ export default function VarianceList({
     const fieldArray = useFieldArray({
         name: "variance",
     });
-    const { fields, append, remove } = fieldArray;
+    const { fields, append } = fieldArray;
     const [latestFromValWatcher, amountValWatcher, taxPercentWatcher] = useWatch({
         control,
         name: [`variance.${fields.length - 1}.from`, "amount", "taxPercent"],
@@ -144,7 +146,7 @@ export default function VarianceList({
     }, [errors]);
 
     const [varianceAnimationParentRef] = useAutoAnimate<HTMLUListElement>();
-    const [disabled, setDisabled] = useState(false);
+    const [enabled, setEnabled] = enabledState;
 
     return (
         <div>
@@ -158,30 +160,23 @@ export default function VarianceList({
                         until the next period.
                     </>}
                 />
-                <Tooltip content={`${disabled ? "Enable" : "Disable"} variance`}>
+                <Tooltip content={`${enabled ? "Disable" : "Enable"} variance`}>
                     <div className="self-center rounded-md p-2 hover:bg-gray-200 dark:bg-transparent">
                         <Switch
-                            id="disabled"
-                            checked={!disabled}
+                            id="enabled"
+                            checked={enabled}
                             onCheckedChange={() => {
-                                // if (!disabled) {
-                                //     remove();
-                                // } else {
-                                //     append({
-                                //         from: 1,
-                                //         amount: watchAmountVal,
-                                //         taxPercent: DEFAULT_TAX_PERCENT,
-                                //     });
-                                // }
-                                !disabled && remove()
-                                setDisabled(!disabled);
+                                setEnabled(!enabled);
+                                if (!enabled && !(fields.length > 0)) {
+                                    append(newPeriodDefaultShape)
+                                }
                             }}
                         />
                     </div>
                 </Tooltip>
             </div>
 
-            {!disabled && (
+            {enabled && (
                 <>
                     <ul className="space-y-4" ref={varianceAnimationParentRef}>
                         {fields.map((field, index) => (

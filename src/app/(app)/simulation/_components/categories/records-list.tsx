@@ -21,6 +21,7 @@ import { RouterOutputs } from '~/lib/trpc/shared';
 import useUpdateInflation from '~/app/(app)/_lib/use-update-inflation';
 import { ControlledSelect, ControlledSwitch } from '~/components/ui/core/form/select/Select';
 import { CountryInflInput, CountrySelect } from '~/app/_components/fields';
+import log from '~/lib/lib';
 
 const Record = ({
     index,
@@ -155,9 +156,11 @@ const Record = ({
 export default function RecordsList({
     user,
     isMutationLoading,
+    enabledState
 }: {
     user: NonNullable<RouterOutputs['user']['get']>;
     isMutationLoading: boolean;
+    enabledState: [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 }) {
     // form
     const form = useFormContext<CatInputType>();
@@ -165,7 +168,7 @@ export default function RecordsList({
         name: "records",
     });
     const { formState: { errors }, control } = form;
-    const { fields, append, remove } = fieldArray;
+    const { fields, append } = fieldArray;
     const [titleValWatcher, typeWatcher, inflEnabledWather, inflValWatcher, currencyWatcher, watchLatestRecordInflType] = useWatch({
         control,
         name: ["title", "type", "inflEnabled", "inflVal", "currency", `records.${fields.length - 1}.type`],
@@ -200,7 +203,7 @@ export default function RecordsList({
     }, [errors]);
 
     const [recordsAnimationParentRef] = useAutoAnimate<HTMLUListElement>();
-    const [disabled, setDisabled] = useState(false);
+    const [enabled, setEnabled] = enabledState
 
     return (
         <div>
@@ -209,21 +212,23 @@ export default function RecordsList({
                     Title={() => <Label className="!m-0">Records</Label>}
                     infoCont={<>Your monthly expenses for {titleValWatcher || "current"} category</>}
                 />
-                <Tooltip content={`${disabled ? "Enable" : "Disable"} records`}>
+                <Tooltip content={`${enabled ? "Disable" : "Enable"} records`}>
                     <div className="self-center rounded-md p-2 hover:bg-gray-200 dark:bg-transparent">
                         <Switch
-                            id="disabled"
-                            checked={!disabled}
+                            id="enabled"
+                            checked={enabled}
                             onCheckedChange={() => {
-                                !disabled && remove()
-                                setDisabled(!disabled);
+                                setEnabled(!enabled);
+                                if (!enabled && !(fields.length > 0)) {
+                                    append(newRecordDefaultShape)
+                                }
                             }}
                         />
                     </div>
                 </Tooltip>
             </div>
 
-            {!disabled && (
+            {enabled && (
                 <>
                     <ul className="space-y-4" ref={recordsAnimationParentRef}>
                         {fields.map((field, index) => (

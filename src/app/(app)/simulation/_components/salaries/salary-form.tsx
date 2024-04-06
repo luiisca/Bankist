@@ -250,6 +250,8 @@ export default function SalaryForm({
             }
         },
     });
+    const varianceListEnabledState = useState(Boolean(salary?.variance && salary.variance.length > 0));
+    const [varianceListEnabled] = varianceListEnabledState;
 
     return (
         <Form<SalInputType>
@@ -348,7 +350,6 @@ export default function SalaryForm({
                             label="Income Taxes"
                             addOnSuffix={<Percent />}
                             placeholder={`${DEFAULT_TAX_PERCENT}`}
-                            customNumValidation
                             onChange={(parsedValue: number) => {
                                 debounce(() => {
                                     if (varianceWatcher && varianceWatcher.length > 0) {
@@ -383,7 +384,10 @@ export default function SalaryForm({
                 </div>
             </div>
 
-            <VarianceList isMutationLoading={salaryMutation.isLoading} />
+            <VarianceList
+                enabledState={varianceListEnabledState}
+                isMutationLoading={salaryMutation.isLoading}
+            />
 
             <div className="flex items-center space-x-2 pt-3">
                 <Button

@@ -97,7 +97,7 @@ model Period {
 model Category {
     id          BigInt  @id @default(autoincrement())
     title       String
-    budget      Int
+    budget      Int?
     currency    String
     type        String
     inflEnabled Boolean

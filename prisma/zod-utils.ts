@@ -72,6 +72,7 @@ export const serverSalInputZod = z.object({
 export const optCatInputZod = z.object({
     id: z.bigint().positive().optional(),
     inflVal: z.literal('').or(percentage.optional()),
+    budget: z.literal('').or(z.number().positive().optional()),
     icon: z.string().optional(),
     frequency: z.literal('').or(yearFrequency.optional()),
 })
@@ -83,7 +84,6 @@ export const optCatRecordInputZod = z.object({
 })
 export const catInputZod = optCatInputZod.extend({
     title: nonEmptyString,
-    budget: requiredNumberInput,
     currency: selectOptions,
     type: selectOptions,
     inflEnabled: z.boolean(),

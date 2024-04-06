@@ -49,6 +49,7 @@ import { api } from "~/lib/trpc/react";
 import { CategoriesContext } from "./categories-provider";
 import { BalanceHistoryContext } from "../../_lib/balance-history-context";
 import { BalanceContext } from "../../_lib/balance-context";
+import log from "~/lib/lib";
 
 export default function CategoryForm({
     elKey,
@@ -71,15 +72,15 @@ export default function CategoryForm({
         defaultValues: defaultValues || getDefCatInputValues({ category, user }),
     });
 
-    const { setValue, register, control } = categoryForm;
+    const { setValue, register, control, setError, formState: { errors } } = categoryForm;
 
     // watch values
     const allValuesWatcher = useWatch({
         control
     })
-    const [typeWatcher, freqTypeWatcher, inflEnabledWatcher, inflTypeWatcher] = useWatch({
+    const [budgetWatcher, typeWatcher, freqTypeWatcher, inflEnabledWatcher, inflTypeWatcher] = useWatch({
         control,
-        name: ["type", 'freqType', 'inflEnabled', 'inflType'],
+        name: ["budget", "type", 'freqType', 'inflEnabled', 'inflType'],
     });
 
     // mutation
@@ -266,11 +267,29 @@ export default function CategoryForm({
     });
 
     const { updateInflation, isLoadingInfl, isValidInfl } = useUpdateInflation<CatInputType>();
+    const recordsListEnabledState = useState(Boolean(category?.records && category.records.length > 0));
+    const [recordsListEnabled] = recordsListEnabledState;
 
     return (
         <Form<CatInputType>
             form={categoryForm}
+            customInputValidation={() => {
+                if (!budgetWatcher && !recordsListEnabled) {
+                    setError('budget', { message: 'Required' })
+                    errors.budget?.ref && errors.budget.ref.focus?.()
+
+                    return false
+                } else {
+                    return true
+                }
+            }}
             handleSubmit={(values) => {
+                if (!recordsListEnabled) {
+                    delete values.records
+                }
+                if (values.budget === "") {
+                    values.budget = undefined;
+                }
                 const { parsedCategory, parsedRecords } = parseCatInputData(values, user)
 
                 // let user know optional empty fields have been filled with default data
@@ -328,25 +347,30 @@ export default function CategoryForm({
             </div>
 
             {/* type */}
-            <div>
-                <ControlledSelect<CatInputType>
-                    control={control}
-                    getOptions={() => BASIC_BAL_TYPES}
-                    name="type"
-                    label="Type"
-                />
-            </div>
+            {!recordsListEnabled && (
+                <div>
+                    <ControlledSelect<CatInputType>
+                        control={control}
+                        getOptions={() => BASIC_BAL_TYPES}
+                        name="type"
+                        label="Type"
+                    />
+                </div>
+            )}
 
             <div className="flex space-x-3">
                 {/* budget */}
-                <div className="flex-[1_1_80%]">
-                    <NumberInput<CatInputType>
-                        control={control}
-                        name="budget"
-                        label="Monthly Budget"
-                        placeholder="Budget"
-                    />
-                </div>
+                {!recordsListEnabled && (
+                    <div className="flex-[1_1_80%]">
+                        {/* hide this input */}
+                        <NumberInput<CatInputType>
+                            control={control}
+                            name="budget"
+                            label="Monthly Budget"
+                            placeholder="100"
+                        />
+                    </div>
+                )}
 
                 {/* currency Select*/}
                 <div>
@@ -441,8 +465,9 @@ export default function CategoryForm({
 
             {/* expenses records */}
             <RecordsList
-                isMutationLoading={categoryMutation.isLoading}
                 user={user}
+                isMutationLoading={categoryMutation.isLoading}
+                enabledState={recordsListEnabledState}
             />
 
             <div className="flex items-center space-x-2 pt-3">
